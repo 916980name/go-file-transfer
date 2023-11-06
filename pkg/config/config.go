@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ENV_PREFIX         = "GO_API_filetransfer"
+	ENV_PREFIX         = "GO_FILE_TRANSFER"
 	defaultConfigName  = "file-transfer.yaml"
 	recommendedHomeDir = ".file-transfer"
 )

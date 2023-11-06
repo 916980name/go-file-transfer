@@ -1,9 +1,13 @@
 package filetransfer
 
 import (
+	"context"
 	"net/http"
 
 	"file-transfer/internal/file-transfer/controller"
+	"file-transfer/internal/file-transfer/repo"
+	"file-transfer/internal/file-transfer/service"
+	"file-transfer/pkg/db/dbmongo"
 	"file-transfer/pkg/middleware"
 
 	"github.com/gorilla/mux"
@@ -22,7 +26,16 @@ func handleMuxChainFunc(pf middleware.FiletransferHandlerFactory) func(w http.Re
 	}
 }
 
+func wrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
+	return handleMuxChainFunc(middleware.RequestFilter(handleMuxChain(f)))
+}
+
 func initAllRouters(r *mux.Router) error {
-	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(handleMuxChainFunc(middleware.RequestFilter(handleMuxChain(controller.Home))))
+	messageRepo := repo.NewMessageRepo(dbmongo.GetClient(context.Background()))
+	messageService := service.NewMessageService(messageRepo)
+	messageController := controller.NewMessageController(messageService)
+
+	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
+	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(wrapper(messageController.Onemessage))
 	return nil
 }
