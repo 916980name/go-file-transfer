@@ -31,11 +31,17 @@ func wrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
 }
 
 func initAllRouters(r *mux.Router) error {
-	messageRepo := repo.NewMessageRepo(dbmongo.GetClient(context.Background()))
+	mongoClient := dbmongo.GetClient(context.Background())
+	messageRepo := repo.NewMessageRepo(mongoClient)
 	messageService := service.NewMessageService(messageRepo)
 	messageController := controller.NewMessageController(messageService)
+	userRepo := repo.NewUserRepo(mongoClient)
+	userService := service.NewUserService(userRepo)
+	userController := controller.NewUserController(userService)
 
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
 	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(wrapper(messageController.Onemessage))
+
+	r.NewRoute().Methods("POST").Path("/trysignin").HandlerFunc(wrapper(userController.Login))
 	return nil
 }

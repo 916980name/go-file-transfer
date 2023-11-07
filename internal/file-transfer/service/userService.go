@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/subtle"
 	"file-transfer/internal/file-transfer/repo"
+	v1 "file-transfer/pkg/api/v1"
+	"file-transfer/pkg/errno"
 	"file-transfer/pkg/model"
 	"file-transfer/pkg/util"
 	"time"
@@ -10,6 +13,7 @@ import (
 
 type UserService interface {
 	CreateUser(ctx context.Context, username string) (*model.UserInfo, error)
+	Login(ctx context.Context, request v1.UserLoginRequest) (*model.UserInfo, error)
 }
 
 type userService struct {
@@ -41,4 +45,23 @@ func (s *userService) CreateUser(ctx context.Context, username string) (*model.U
 	}
 	user, error := s.userRepo.FindById(ctx, id)
 	return user, error
+}
+
+func (s *userService) Login(ctx context.Context, request v1.UserLoginRequest) (*model.UserInfo, error) {
+	if len(request.Username) == 0 || len(request.Password) == 0 {
+		return nil, &errno.Errno{
+			Message: "request field can't empty",
+		}
+	}
+	user, err := s.userRepo.FindByUsername(ctx, request.Username)
+	if err != nil {
+		return nil, err
+	}
+	if subtle.ConstantTimeCompare([]byte(user.Password), []byte(request.Password)) != 1 {
+		return nil, &errno.Errno{
+			Message: "authentication failed",
+		}
+	}
+
+	return user, nil
 }

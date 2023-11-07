@@ -13,6 +13,7 @@ import (
 type UserRepo interface {
 	Create(ctx context.Context, user *model.UserInfo) (string, error)
 	FindById(ctx context.Context, id string) (*model.UserInfo, error)
+	FindByUsername(ctx context.Context, username string) (*model.UserInfo, error)
 }
 
 type userRepoImpl struct {
@@ -51,6 +52,17 @@ func (u *userRepoImpl) FindById(ctx context.Context, id string) (*model.UserInfo
 	}
 
 	filter := bson.M{"_id": bson.M{"$eq": objID}}
+	user := &model.UserInfo{}
+	if err := collection.FindOne(ctx, filter).Decode(user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *userRepoImpl) FindByUsername(ctx context.Context, username string) (*model.UserInfo, error) {
+	collection := u.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_USER)
+
+	filter := bson.M{"username": bson.M{"$eq": username}}
 	user := &model.UserInfo{}
 	if err := collection.FindOne(ctx, filter).Decode(user); err != nil {
 		return nil, err

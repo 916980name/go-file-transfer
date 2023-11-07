@@ -16,6 +16,7 @@ import (
 	"file-transfer/pkg/config"
 	"file-transfer/pkg/db/dbmongo"
 	"file-transfer/pkg/log"
+	"file-transfer/pkg/token"
 	"file-transfer/pkg/verflag"
 
 	"github.com/gorilla/mux"
@@ -102,6 +103,13 @@ func run() error {
 	// print config
 	settings, _ := json.Marshal(viper.AllSettings())
 	log.Infow(string(settings))
+
+	// init jwt
+	jwtSecret := viper.GetString(token.ENV_SIGN_KEY)
+	if len(jwtSecret) == 0 {
+		jwtSecret = viper.GetString("jwt-secret")
+	}
+	token.Init(jwtSecret, token.ID_KEY)
 
 	// init mux
 	options := serverOptions()
