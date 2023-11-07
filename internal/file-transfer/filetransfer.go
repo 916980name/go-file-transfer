@@ -11,7 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"file-transfer/internal/file-transfer/repo"
+	"file-transfer/internal/file-transfer/service"
 	"file-transfer/pkg/config"
+	"file-transfer/pkg/db/dbmongo"
 	"file-transfer/pkg/log"
 	"file-transfer/pkg/verflag"
 
@@ -21,6 +24,36 @@ import (
 )
 
 var cfgFile string
+
+func createUserCommand() *cobra.Command {
+	var userCmd = &cobra.Command{
+		Use:     "newuser",
+		Aliases: []string{"nu"},
+		Short:   "create a new user with username",
+		Args:    cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			verflag.PrintAndExitIfRequested()
+
+			config.ReadConfig(cfgFile)
+			log.Init(log.ReadLogOptions())
+			defer log.Sync()
+
+			log.Debugw("create user cobra ready to run")
+			username := args[0]
+			client := dbmongo.GetClient(context.TODO())
+			defer dbmongo.CloseClient(context.TODO())
+			userRepo := repo.NewUserRepo(client)
+			userServ := service.NewUserService(userRepo)
+			userInfo, err := userServ.CreateUser(context.TODO(), username)
+			if err != nil {
+				log.Fatalw(err.Error(), err)
+				return
+			}
+			jsdata, _ := json.Marshal(userInfo)
+			fmt.Println(string(jsdata))
+		}}
+	return userCmd
+}
 
 func NewCommand() *cobra.Command {
 	log.Debugw("NewCommand begin")
@@ -59,6 +92,8 @@ func NewCommand() *cobra.Command {
 
 	verflag.AddFlags(cmd.PersistentFlags())
 
+	createUserCmd := createUserCommand()
+	cmd.AddCommand(createUserCmd)
 	log.Debugw("NewCommand return")
 	return cmd
 }

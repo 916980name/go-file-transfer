@@ -14,6 +14,7 @@ import (
 var (
 	MONGO_DATABASE = "filetransfer"
 	COLL_MESSAGE   = "message"
+	COLL_USER      = "user"
 
 	client     *mongo.Client
 	clientOnce sync.Once
