@@ -7,7 +7,7 @@ import (
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/token"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func NewUserController(service service.UserService) UserController {
 
 func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	// Read the request body
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
@@ -43,7 +43,7 @@ func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *h
 		errno.WriteResponse(ctx, w, err, nil)
 		return
 	}
-	tokenStr, err := token.Sign(user.Username)
+	tokenStr, err := token.Sign(user.Id, user.Username)
 	if err != nil {
 		errno.WriteResponse(ctx, w, err, nil)
 		return

@@ -109,7 +109,7 @@ func run() error {
 	if len(jwtSecret) == 0 {
 		jwtSecret = viper.GetString("jwt-secret")
 	}
-	token.Init(jwtSecret, token.ID_KEY)
+	token.Init(jwtSecret)
 
 	// init mux
 	options := serverOptions()

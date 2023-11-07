@@ -4,7 +4,9 @@ import (
 	"context"
 	"file-transfer/internal/file-transfer/service"
 	v1 "file-transfer/pkg/api/v1"
+	"file-transfer/pkg/common"
 	"file-transfer/pkg/errno"
+	"file-transfer/pkg/util"
 	"net/http"
 )
 
@@ -18,8 +20,20 @@ func NewMessageController(service service.MessageService) MessageController {
 	}
 }
 
-func (mc *MessageController) Onemessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	result, err := mc.service.QueryMessage(ctx, &v1.MessageQuery{UserId: "A"})
+func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	messageRequest := &v1.MessageQuery{
+		PageNum:  1,
+		PageSize: 10,
+	}
+	err := util.HttpReadBody(r, messageRequest)
+	if err != nil {
+		errno.WriteResponse(ctx, w, err, nil)
+		return
+	}
+	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)
+	util.DebugPrintObj(ctx, messageRequest)
+
+	result, err := mc.service.QueryMessage(ctx, messageRequest)
 	if err != nil {
 		errno.WriteResponse(ctx, w, err, nil)
 		return

@@ -30,6 +30,10 @@ func wrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
 	return handleMuxChainFunc(middleware.RequestFilter(handleMuxChain(f)))
 }
 
+func authWrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
+	return handleMuxChainFunc(middleware.RequestFilter(middleware.AuthFilter(handleMuxChain(f))))
+}
+
 func initAllRouters(r *mux.Router) error {
 	mongoClient := dbmongo.GetClient(context.Background())
 	messageRepo := repo.NewMessageRepo(mongoClient)
@@ -40,8 +44,8 @@ func initAllRouters(r *mux.Router) error {
 	userController := controller.NewUserController(userService)
 
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
-	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(wrapper(messageController.Onemessage))
 
 	r.NewRoute().Methods("POST").Path("/trysignin").HandlerFunc(wrapper(userController.Login))
+	r.NewRoute().Methods("POST").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessage))
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"file-transfer/internal/file-transfer/repo"
 	v1 "file-transfer/pkg/api/v1"
+	"file-transfer/pkg/errno"
 	"file-transfer/pkg/model"
 )
 
@@ -22,5 +23,8 @@ func NewMessageService(repo repo.MessageRepo) MessageService {
 }
 
 func (s *messageService) QueryMessage(ctx context.Context, query *v1.MessageQuery) (tags []model.Message, err error) {
+	if len(query.UserId) < 1 {
+		return nil, &errno.Errno{Message: "request illeagal"}
+	}
 	return s.messageRepo.Query(ctx, query)
 }
