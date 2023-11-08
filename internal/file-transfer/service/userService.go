@@ -84,6 +84,7 @@ func (s *userService) CreateLoginUrl(ctx context.Context, userId string) (string
 		return "", errno.ErrInvalidParameter
 	}
 	kStr, _ := util.GenerateRandomString(16)
+	// TODO: there could create many link for one user
 	bc := s.redisClient.Set(ctx, dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX+kStr, userId, 5*time.Minute)
 	if bc.Err() != nil {
 		log.C(ctx).Warnw(bc.Err().Error())
