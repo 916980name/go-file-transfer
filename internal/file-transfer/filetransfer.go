@@ -44,7 +44,7 @@ func createUserCommand() *cobra.Command {
 			client := dbmongo.GetClient(context.TODO())
 			defer dbmongo.CloseClient(context.TODO())
 			userRepo := repo.NewUserRepo(client)
-			userServ := service.NewUserService(userRepo)
+			userServ := service.NewUserService(userRepo, nil)
 			userInfo, err := userServ.CreateUser(context.TODO(), username)
 			if err != nil {
 				log.Fatalw(err.Error(), err)
@@ -117,6 +117,7 @@ func run() error {
 	addr := options.Addr + ":" + options.Port
 	r := mux.NewRouter()
 
+	// init routers
 	initAllRouters(r)
 
 	http.Handle("/", r)

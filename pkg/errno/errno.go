@@ -40,6 +40,11 @@ func WriteResponse(c context.Context, w http.ResponseWriter, data interface{}) {
 }
 
 func marshalResponse(w http.ResponseWriter, hcode int, data interface{}) {
+	if str, ok := data.(string); ok {
+		w.WriteHeader(hcode)
+		w.Write([]byte(str))
+		return
+	}
 	result, eR := json.Marshal(data)
 	if eR != nil {
 		w.WriteHeader(http.StatusInternalServerError)

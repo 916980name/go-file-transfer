@@ -29,7 +29,7 @@ func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWri
 	}
 	err := util.HttpReadBody(r, messageRequest)
 	if err != nil {
-		errno.WriteErrorResponse(ctx, w, err)
+		errno.WriteErrorResponse(ctx, w, errno.ErrInvalidParameter)
 		return
 	}
 	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)

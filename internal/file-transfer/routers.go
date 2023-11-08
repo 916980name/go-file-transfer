@@ -8,6 +8,7 @@ import (
 	"file-transfer/internal/file-transfer/repo"
 	"file-transfer/internal/file-transfer/service"
 	"file-transfer/pkg/db/dbmongo"
+	"file-transfer/pkg/db/dbredis"
 	"file-transfer/pkg/middleware"
 
 	"github.com/gorilla/mux"
@@ -35,19 +36,22 @@ func authWrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
 }
 
 func initAllRouters(r *mux.Router) error {
+	redisClient := dbredis.GetClient(context.Background())
 	mongoClient := dbmongo.GetClient(context.Background())
 	messageRepo := repo.NewMessageRepo(mongoClient)
 	messageService := service.NewMessageService(messageRepo)
 	messageController := controller.NewMessageController(messageService)
 	userRepo := repo.NewUserRepo(mongoClient)
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, redisClient)
 	userController := controller.NewUserController(userService)
 
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
 	r.NewRoute().Methods("POST").Path("/trysignin").HandlerFunc(wrapper(userController.Login))
+	r.NewRoute().Methods("GET").Path("/ls/{loginKey}").HandlerFunc(wrapper(userController.LoginByShareLink))
 
 	r.NewRoute().Methods("POST").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessage))
 	r.NewRoute().Methods("PUT").Path("/msg").HandlerFunc(authWrapper(messageController.SendMessage))
 	r.NewRoute().Methods("DELETE").Path("/msg/{mId}").HandlerFunc(authWrapper(messageController.DeleteMessage))
+	r.NewRoute().Methods("GET").Path("/share/login").HandlerFunc(authWrapper(userController.LoginShare))
 	return nil
 }
