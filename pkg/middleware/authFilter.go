@@ -15,7 +15,7 @@ func AuthFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 			log.C(ctx).Debugw("auth do start")
 			idkey, userKey, err := token.ParseRequest(r)
 			if err != nil {
-				errno.WriteResponse(ctx, w, err, nil)
+				errno.WriteErrorResponse(ctx, w, err)
 				return
 			}
 			ctx = context.WithValue(ctx, common.CTX_USER_KEY, idkey)

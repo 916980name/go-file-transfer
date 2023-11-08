@@ -8,6 +8,7 @@ import (
 	"file-transfer/pkg/model"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -15,6 +16,7 @@ import (
 type MessageRepo interface {
 	Query(ctx context.Context, filter *v1.MessageQuery) ([]model.Message, error)
 	Insert(ctx context.Context, m *model.Message) (*mongo.InsertOneResult, error)
+	Delete(ctx context.Context, mId string, uId string) (*mongo.DeleteResult, error)
 }
 
 type messageRepoImpl struct {
@@ -77,4 +79,15 @@ func (t *messageRepoImpl) Query(ctx context.Context, condition *v1.MessageQuery)
 func (t *messageRepoImpl) Insert(ctx context.Context, m *model.Message) (*mongo.InsertOneResult, error) {
 	c := t.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_MESSAGE)
 	return c.InsertOne(ctx, m)
+}
+
+func (t *messageRepoImpl) Delete(ctx context.Context, mId string, uId string) (*mongo.DeleteResult, error) {
+	c := t.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_MESSAGE)
+	objID, err := primitive.ObjectIDFromHex(mId)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.M{"_id": bson.M{"$eq": objID}, "userId": bson.M{"$eq": uId}}
+	return c.DeleteOne(ctx, filter)
 }

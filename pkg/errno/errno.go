@@ -24,23 +24,25 @@ type ErrResponse struct {
 	Message string `json:"message"`
 }
 
-func WriteResponse(c context.Context, w http.ResponseWriter, err error, data interface{}) {
-	if err != nil {
-		hcode, code, message := Decode(err)
-		marshalResponse(w, hcode, ErrResponse{
-			Code:    code,
-			Message: message,
-		})
-
-		return
+func WriteErrorResponse(c context.Context, w http.ResponseWriter, err error) {
+	hcode, code, message := Decode(err)
+	if hcode == 0 {
+		hcode = http.StatusBadRequest
 	}
-	marshalResponse(w, 200, data)
+	marshalResponse(w, hcode, ErrResponse{
+		Code:    code,
+		Message: message,
+	})
+}
+
+func WriteResponse(c context.Context, w http.ResponseWriter, data interface{}) {
+	marshalResponse(w, http.StatusOK, data)
 }
 
 func marshalResponse(w http.ResponseWriter, hcode int, data interface{}) {
 	result, eR := json.Marshal(data)
 	if eR != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"file-transfer/internal/file-transfer/repo"
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/errno"
+	"file-transfer/pkg/log"
 	"file-transfer/pkg/model"
 	"file-transfer/pkg/util"
 	"time"
@@ -55,9 +56,13 @@ func (s *userService) Login(ctx context.Context, request v1.UserLoginRequest) (*
 	}
 	user, err := s.userRepo.FindByUsername(ctx, request.Username)
 	if err != nil {
-		return nil, err
+		log.C(ctx).Warnw("authentication failed", err)
+		return nil, &errno.Errno{
+			Message: "authentication failed",
+		}
 	}
 	if subtle.ConstantTimeCompare([]byte(user.Password), []byte(request.Password)) != 1 {
+		log.C(ctx).Warnw("authentication failed, bad password")
 		return nil, &errno.Errno{
 			Message: "authentication failed",
 		}

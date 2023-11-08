@@ -40,14 +40,14 @@ func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *h
 	}
 	user, err := uc.service.Login(ctx, loginRequest)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
 	tokenStr, err := token.Sign(user.Id, user.Username)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
 	w.Header().Set(token.AuthHeader, tokenStr)
-	errno.WriteResponse(ctx, w, nil, user.Username)
+	errno.WriteResponse(ctx, w, user.Username)
 }

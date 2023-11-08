@@ -8,6 +8,8 @@ import (
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/util"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type MessageController struct {
@@ -27,7 +29,7 @@ func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWri
 	}
 	err := util.HttpReadBody(r, messageRequest)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
 	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)
@@ -35,17 +37,17 @@ func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWri
 
 	result, err := mc.service.QueryMessage(ctx, messageRequest)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
-	errno.WriteResponse(ctx, w, nil, result)
+	errno.WriteResponse(ctx, w, result)
 }
 
 func (mc *MessageController) SendMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	messageRequest := &v1.MessageSendRequest{}
 	err := util.HttpReadBody(r, messageRequest)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
 	userId := ctx.Value(common.CTX_USER_KEY).(string)
@@ -53,7 +55,26 @@ func (mc *MessageController) SendMessage(ctx context.Context, w http.ResponseWri
 
 	err = mc.service.SendMessage(ctx, messageRequest, userId)
 	if err != nil {
-		errno.WriteResponse(ctx, w, err, nil)
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (mc *MessageController) DeleteMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mId := vars["mId"]
+	if len(mId) < 1 {
+		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
+		return
+	}
+
+	userId := ctx.Value(common.CTX_USER_KEY).(string)
+
+	err := mc.service.DeleteMessage(ctx, mId, userId)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
 
