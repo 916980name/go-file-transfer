@@ -22,7 +22,15 @@ func NewMessageController(service service.MessageService) MessageController {
 	}
 }
 
-func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (mc *MessageController) ReadMessageDefault(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	messageRequest := &v1.MessageQuery{
+		PageNum:  1,
+		PageSize: 10,
+	}
+	mc.readMessage(ctx, w, messageRequest)
+}
+
+func (mc *MessageController) ReadMessageByPage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	messageRequest := &v1.MessageQuery{
 		PageNum:  1,
 		PageSize: 10,
@@ -32,6 +40,10 @@ func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWri
 		errno.WriteErrorResponse(ctx, w, errno.ErrInvalidParameter)
 		return
 	}
+	mc.readMessage(ctx, w, messageRequest)
+}
+
+func (mc *MessageController) readMessage(ctx context.Context, w http.ResponseWriter, messageRequest *v1.MessageQuery) {
 	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)
 	util.DebugPrintObj(ctx, messageRequest)
 
