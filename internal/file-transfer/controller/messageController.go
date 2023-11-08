@@ -45,7 +45,6 @@ func (mc *MessageController) ReadMessageByPage(ctx context.Context, w http.Respo
 
 func (mc *MessageController) readMessage(ctx context.Context, w http.ResponseWriter, messageRequest *v1.MessageQuery) {
 	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)
-	util.DebugPrintObj(ctx, messageRequest)
 
 	result, err := mc.service.QueryMessage(ctx, messageRequest)
 	if err != nil {

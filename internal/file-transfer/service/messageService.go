@@ -13,7 +13,7 @@ import (
 )
 
 type MessageService interface {
-	QueryMessage(ctx context.Context, query *v1.MessageQuery) (tags []model.Message, err error)
+	QueryMessage(ctx context.Context, query *v1.MessageQuery) ([]v1.MessageResponse, error)
 	SendMessage(ctx context.Context, r *v1.MessageSendRequest, userId string) error
 	DeleteMessage(ctx context.Context, mId string, userId string) error
 }
@@ -28,11 +28,23 @@ func NewMessageService(repo repo.MessageRepo) MessageService {
 	return &messageService{messageRepo: repo}
 }
 
-func (s *messageService) QueryMessage(ctx context.Context, query *v1.MessageQuery) (tags []model.Message, err error) {
+func (s *messageService) QueryMessage(ctx context.Context, query *v1.MessageQuery) ([]v1.MessageResponse, error) {
 	if len(query.UserId) < 1 {
 		return nil, &errno.Errno{Message: "request illeagal"}
 	}
-	return s.messageRepo.Query(ctx, query)
+	list, err := s.messageRepo.Query(ctx, query)
+	if err != nil {
+		return nil, errno.ErrBind
+	}
+	transformed := make([]v1.MessageResponse, len(list))
+	for i, msg := range list {
+		transformed[i] = v1.MessageResponse{
+			Id:        msg.Id,
+			Info:      msg.Info,
+			CreatedAt: msg.CreatedAt,
+		}
+	}
+	return transformed, err
 }
 
 func (s *messageService) SendMessage(ctx context.Context, r *v1.MessageSendRequest, userId string) error {

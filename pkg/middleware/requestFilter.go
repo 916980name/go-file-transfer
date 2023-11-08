@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"file-transfer/pkg/common"
+	"file-transfer/pkg/log"
 	"net/http"
 	"strings"
 
@@ -27,7 +28,7 @@ func RequestFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 
 			ctx = context.WithValue(ctx, common.REQUEST_URI, getRequestUri(r))
 			ctx = context.WithValue(ctx, common.REQUEST_METHOD, getRequestMethod(r))
-			// log.C(ctx).Debugw("new Request --> ")
+			log.C(ctx).Debugw("new Request --> ")
 			if pf != nil {
 				next = pf(next)
 			}
