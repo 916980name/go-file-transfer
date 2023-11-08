@@ -5,3 +5,7 @@ type MessageQuery struct {
 	PageNum  int64  `json:"pageNum,omitempty"`
 	PageSize int64  `json:"pageSize,omitempty"`
 }
+
+type MessageSendRequest struct {
+	Info string `json:"info"`
+}

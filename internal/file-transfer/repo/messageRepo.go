@@ -14,6 +14,7 @@ import (
 
 type MessageRepo interface {
 	Query(ctx context.Context, filter *v1.MessageQuery) ([]model.Message, error)
+	Insert(ctx context.Context, m *model.Message) (*mongo.InsertOneResult, error)
 }
 
 type messageRepoImpl struct {
@@ -47,7 +48,7 @@ func (t *messageRepoImpl) Query(ctx context.Context, condition *v1.MessageQuery)
 	options := options.Find().
 		SetSkip(skip).
 		SetLimit(condition.PageSize).
-		SetSort(bson.M{"create_time": -1})
+		SetSort(bson.M{"createdAt": -1})
 
 	// Call the Find method to retrieve the documents that match the query conditions
 	cur, err := collection.Find(context.Background(), filter, options)
@@ -71,4 +72,9 @@ func (t *messageRepoImpl) Query(ctx context.Context, condition *v1.MessageQuery)
 		return nil, err
 	}
 	return arr, nil
+}
+
+func (t *messageRepoImpl) Insert(ctx context.Context, m *model.Message) (*mongo.InsertOneResult, error) {
+	c := t.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_MESSAGE)
+	return c.InsertOne(ctx, m)
 }

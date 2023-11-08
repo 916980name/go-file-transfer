@@ -40,3 +40,22 @@ func (mc *MessageController) ReadMessage(ctx context.Context, w http.ResponseWri
 	}
 	errno.WriteResponse(ctx, w, nil, result)
 }
+
+func (mc *MessageController) SendMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	messageRequest := &v1.MessageSendRequest{}
+	err := util.HttpReadBody(r, messageRequest)
+	if err != nil {
+		errno.WriteResponse(ctx, w, err, nil)
+		return
+	}
+	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	util.DebugPrintObj(ctx, messageRequest)
+
+	err = mc.service.SendMessage(ctx, messageRequest, userId)
+	if err != nil {
+		errno.WriteResponse(ctx, w, err, nil)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

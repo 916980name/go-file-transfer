@@ -44,8 +44,9 @@ func initAllRouters(r *mux.Router) error {
 	userController := controller.NewUserController(userService)
 
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
-
 	r.NewRoute().Methods("POST").Path("/trysignin").HandlerFunc(wrapper(userController.Login))
+
 	r.NewRoute().Methods("POST").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessage))
+	r.NewRoute().Methods("PUT").Path("/msg").HandlerFunc(authWrapper(messageController.SendMessage))
 	return nil
 }

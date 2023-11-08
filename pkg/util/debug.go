@@ -7,13 +7,13 @@ import (
 	"file-transfer/pkg/log"
 )
 
-func DebugPrintObj(ctx context.Context, obj interface{}) string {
+func DebugPrintObj(ctx context.Context, obj interface{}) {
 	if common.FLAG_DEBUG {
 		s, e := json.Marshal(obj)
 		if e != nil {
-			return ""
+			return
 		}
 		log.C(ctx).Debugw(string(s))
 	}
-	return ""
+	return
 }
