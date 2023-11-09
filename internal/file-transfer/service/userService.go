@@ -7,14 +7,20 @@ import (
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/common"
 	"file-transfer/pkg/db/dbredis"
+	"file-transfer/pkg/encrypt/aesencrypt"
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/log"
 	"file-transfer/pkg/model"
 	"file-transfer/pkg/util"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
+)
+
+var (
+	SHARE_LINK_EXPIRE time.Duration = 5 * time.Minute
 )
 
 type UserService interface {
@@ -83,20 +89,51 @@ func (s *userService) CreateLoginUrl(ctx context.Context, userId string) (string
 	if len(userId) < 1 {
 		return "", errno.ErrInvalidParameter
 	}
-	kStr, _ := util.GenerateRandomString(16)
+	nowMilli := fmt.Sprint(time.Now().UnixMilli())
+	log.C(ctx).Debugw("now: " + nowMilli)
+	kStr, err := aesencrypt.GetAESEncrypted(nowMilli)
+	if err != nil {
+		log.C(ctx).Warnw(err.Error())
+		return "", errno.InternalServerError
+	}
+	// base64 string could contains "+""/"
+	log.C(ctx).Debugw("kStr: " + kStr)
+	encodeKStr := util.Base64urlEncode(kStr)
+	log.C(ctx).Debugw("encode kStr: " + encodeKStr)
 	// TODO: there could create many link for one user
-	bc := s.redisClient.Set(ctx, dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX+kStr, userId, 5*time.Minute)
+	// set origin kStr
+	bc := s.redisClient.Set(ctx, dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX+kStr, userId, SHARE_LINK_EXPIRE)
 	if bc.Err() != nil {
 		log.C(ctx).Warnw(bc.Err().Error())
 		return "", errno.InternalServerError
 	}
-	return viper.GetString(common.VIPER_HOST_URL) + "/" + common.LOGIN_SHARE_PATH + "/" + kStr, nil
+	// return encodeKStr
+	return viper.GetString(common.VIPER_HOST_URL) + "/" + common.LOGIN_SHARE_PATH + "/" + encodeKStr, nil
 }
 
 func (s *userService) LoginByLoginUrl(ctx context.Context, key string) (*model.UserInfo, error) {
 	if len(key) < 1 {
 		return nil, errno.ErrInvalidParameter
 	}
+	key = util.Base64urlDecode(key)
+	// check the 'key' valid, time not expired
+	timeStr, err := aesencrypt.GetAESDecrypted(key)
+	if err != nil {
+		log.Warnw("share link decrypt fail", "error", err)
+		return nil, errno.ErrInvalidParameter
+	}
+	shareTime, err := time.ParseDuration(timeStr + "ms")
+	if err != nil {
+		log.Warnw("share link time parse fail", "error", err)
+		return nil, errno.ErrInvalidParameter
+	}
+	expireTime := time.Unix(0, shareTime.Nanoseconds()*int64(time.Millisecond)).Add(SHARE_LINK_EXPIRE)
+	if expireTime.Before(time.Now()) {
+		log.Infow("share link expired at: " + expireTime.Format(time.RFC3339))
+		return nil, errno.ErrInvalidParameter
+	}
+
+	// then check redis
 	sc := s.redisClient.Get(ctx, dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX+key)
 	if sc.Err() != nil {
 		log.C(ctx).Warnw(sc.Err().Error())

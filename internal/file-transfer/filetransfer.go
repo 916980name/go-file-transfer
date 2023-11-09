@@ -15,6 +15,7 @@ import (
 	"file-transfer/internal/file-transfer/service"
 	"file-transfer/pkg/config"
 	"file-transfer/pkg/db/dbmongo"
+	"file-transfer/pkg/encrypt/aesencrypt"
 	"file-transfer/pkg/log"
 	"file-transfer/pkg/token"
 	"file-transfer/pkg/verflag"
@@ -103,6 +104,10 @@ func run() error {
 	// print config
 	settings, _ := json.Marshal(viper.AllSettings())
 	log.Infow(string(settings))
+
+	// init encrypt tool
+	// rsaencrypt.InitRSAKeyPair()
+	aesencrypt.InitAES()
 
 	// init jwt
 	jwtSecret := viper.GetString(token.ENV_SIGN_KEY)
