@@ -1,0 +1,17 @@
+[Unit]
+Description=file & message transfer
+StartLimitInterval=200
+StartLimitBurst=2
+
+[Service]
+Environment="GO_FILE_TRANSFER_MONGO_HOST="
+Environment="GO_FILE_TRANSFER_REDIS_HOST="
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/runsoft/prod/file-transfer/
+ExecStart=/home/ubuntu/runsoft/prod/file-transfer/file-transfer
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
