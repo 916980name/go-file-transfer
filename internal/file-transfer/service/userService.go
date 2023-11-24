@@ -87,7 +87,7 @@ func (s *userService) CreateLoginUrl(ctx context.Context, userId string) (string
 }
 
 func (s *userService) LoginByLoginUrl(ctx context.Context, key string) (*model.UserInfo, error) {
-	userId, err := s.shareServ.CheckShareUrl(ctx, common.SHARE_TYPE_LOGIN, key)
+	userId, err := s.shareServ.CheckShareUrl(ctx, common.SHARE_TYPE_LOGIN, key, SHARE_LINK_EXPIRE)
 	if err != nil {
 		return nil, errno.ErrInvalidParameter
 	}
@@ -96,5 +96,6 @@ func (s *userService) LoginByLoginUrl(ctx context.Context, key string) (*model.U
 		log.C(ctx).Warnw("user find failed "+userId, err)
 		return nil, errno.ErrInvalidParameter
 	}
+	log.C(ctx).Infow("login by share link: " + user.Username)
 	return user, nil
 }

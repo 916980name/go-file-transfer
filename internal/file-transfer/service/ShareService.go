@@ -9,6 +9,7 @@ import (
 	"file-transfer/pkg/log"
 	"file-transfer/pkg/util"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -36,7 +37,7 @@ func getSharePathLogin() func(encodeKStr string) string {
 
 type ShareService interface {
 	CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error)
-	CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string) (string, error)
+	CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error)
 }
 
 type shareService struct {
@@ -75,7 +76,7 @@ func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.Shar
 	return shareTypePathMap[shareType](encodeKStr), nil
 }
 
-func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string) (string, error) {
+func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error) {
 	if len(key) < 1 {
 		return "", errno.ErrInvalidParameter
 	}
@@ -86,12 +87,15 @@ func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.Share
 		log.Warnw("share link decrypt fail", "error", err)
 		return "", errno.ErrInvalidParameter
 	}
-	shareTime, err := time.ParseDuration(timeStr + "ms")
+	log.C(ctx).Debugw("timeStr: " + timeStr)
+	// Convert timestamp string to int64
+	timestamp, err := strconv.ParseInt(timeStr, 10, 64)
 	if err != nil {
-		log.Warnw("share link time parse fail", "error", err)
+		log.Warnw("Invalid timestamp format", "error", err)
 		return "", errno.ErrInvalidParameter
 	}
-	expireTime := time.Unix(0, shareTime.Nanoseconds()*int64(time.Millisecond)).Add(SHARE_LINK_EXPIRE)
+
+	expireTime := time.Unix(0, timestamp*int64(time.Millisecond)).Add(expire)
 	if expireTime.Before(time.Now()) {
 		log.Infow("share link expired at: " + expireTime.Format(time.RFC3339))
 		return "", errno.ErrInvalidParameter
