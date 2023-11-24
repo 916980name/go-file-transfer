@@ -32,6 +32,10 @@ func (s *messageService) QueryMessage(ctx context.Context, query *v1.MessageQuer
 	if len(query.UserId) < 1 {
 		return nil, &errno.Errno{Message: "request illeagal"}
 	}
+	if query.PageNum < 1 {
+		query.PageNum = 1
+	}
+	log.C(ctx).Debugw("read msg", query)
 	list, err := s.messageRepo.Query(ctx, query)
 	if err != nil {
 		return nil, errno.ErrBind

@@ -51,8 +51,13 @@ func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *h
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
+	tokenStr = "Bearer " + tokenStr
 	w.Header().Set(token.AuthHeader, tokenStr)
-	errno.WriteResponse(ctx, w, user.Username)
+	resp := &v1.UserLoginResponse{
+		Username:   user.Username,
+		Privileges: []string{"P_USER"},
+	}
+	errno.WriteResponse(ctx, w, resp)
 }
 
 func (uc *UserController) LoginShare(ctx context.Context, w http.ResponseWriter, r *http.Request) {
