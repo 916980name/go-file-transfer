@@ -41,8 +41,9 @@ func initAllRouters(r *mux.Router) error {
 	messageRepo := repo.NewMessageRepo(mongoClient)
 	messageService := service.NewMessageService(messageRepo)
 	messageController := controller.NewMessageController(messageService)
+	shareService := service.NewShareService(redisClient)
 	userRepo := repo.NewUserRepo(mongoClient)
-	userService := service.NewUserService(userRepo, redisClient)
+	userService := service.NewUserService(userRepo, redisClient, shareService)
 	userController := controller.NewUserController(userService)
 
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))

@@ -1,0 +1,118 @@
+package service
+
+import (
+	"context"
+	"file-transfer/pkg/common"
+	"file-transfer/pkg/db/dbredis"
+	"file-transfer/pkg/encrypt/aesencrypt"
+	"file-transfer/pkg/errno"
+	"file-transfer/pkg/log"
+	"file-transfer/pkg/util"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/spf13/viper"
+)
+
+var shareTypePathMap = make(map[common.ShareKey]func(encodeKStr string) string)
+var shareTypePrefixMap = make(map[common.ShareKey]string)
+
+func init() {
+	shareTypePathMap[common.SHARE_TYPE_LOGIN] = getSharePathLogin()
+	shareTypePathMap[common.SHARE_TYPE_MESSAGE] = nil
+	shareTypePathMap[common.SHARE_TYPE_FILE] = nil
+
+	shareTypePrefixMap[common.SHARE_TYPE_LOGIN] = dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX
+	shareTypePrefixMap[common.SHARE_TYPE_MESSAGE] = ""
+	shareTypePrefixMap[common.SHARE_TYPE_FILE] = ""
+}
+
+func getSharePathLogin() func(encodeKStr string) string {
+	return func(encodeKStr string) string {
+		return viper.GetString(common.VIPER_HOST_URL) + "/" + common.LOGIN_SHARE_PATH + "/" + encodeKStr
+	}
+}
+
+type ShareService interface {
+	CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error)
+	CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string) (string, error)
+}
+
+type shareService struct {
+	redisClient *redis.Client
+}
+
+var _ ShareService = (*shareService)(nil)
+
+func NewShareService(rClient *redis.Client) ShareService {
+	return &shareService{redisClient: rClient}
+}
+
+func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error) {
+	if len(value) < 1 {
+		return "", errno.ErrInvalidParameter
+	}
+	nowMilli := fmt.Sprint(time.Now().UnixMilli())
+	log.C(ctx).Debugw("now: " + nowMilli)
+	kStr, err := aesencrypt.GetAESEncrypted(nowMilli)
+	if err != nil {
+		log.C(ctx).Warnw(err.Error())
+		return "", errno.InternalServerError
+	}
+	// base64 string could contains "+""/"
+	log.C(ctx).Debugw("kStr: " + kStr)
+	encodeKStr := util.Base64urlEncode(kStr)
+	log.C(ctx).Debugw("encode kStr: " + encodeKStr)
+	// TODO: there could create many link for one user
+	// set origin kStr
+	bc := s.redisClient.Set(ctx, shareTypePrefixMap[shareType]+kStr, value, expire)
+	if bc.Err() != nil {
+		log.C(ctx).Warnw(bc.Err().Error())
+		return "", errno.InternalServerError
+	}
+	// return encodeKStr
+	return shareTypePathMap[shareType](encodeKStr), nil
+}
+
+func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string) (string, error) {
+	if len(key) < 1 {
+		return "", errno.ErrInvalidParameter
+	}
+	key = util.Base64urlDecode(key)
+	// check the 'key' valid, time not expired
+	timeStr, err := aesencrypt.GetAESDecrypted(key)
+	if err != nil {
+		log.Warnw("share link decrypt fail", "error", err)
+		return "", errno.ErrInvalidParameter
+	}
+	shareTime, err := time.ParseDuration(timeStr + "ms")
+	if err != nil {
+		log.Warnw("share link time parse fail", "error", err)
+		return "", errno.ErrInvalidParameter
+	}
+	expireTime := time.Unix(0, shareTime.Nanoseconds()*int64(time.Millisecond)).Add(SHARE_LINK_EXPIRE)
+	if expireTime.Before(time.Now()) {
+		log.Infow("share link expired at: " + expireTime.Format(time.RFC3339))
+		return "", errno.ErrInvalidParameter
+	}
+
+	// then check redis
+	sc := s.redisClient.Get(ctx, shareTypePrefixMap[shareType]+key)
+	if sc.Err() != nil {
+		log.C(ctx).Warnw(sc.Err().Error())
+		return "", errno.ErrInvalidParameter
+	}
+	value := sc.Val()
+	if value == "" {
+		log.C(ctx).Infow("[" + fmt.Sprint(shareType) + "] share link not match: " + key)
+		return "", errno.ErrInvalidParameter
+	}
+	ic := s.redisClient.Del(ctx, shareTypePrefixMap[shareType]+key)
+	if ic.Err() != nil {
+		log.C(ctx).Warnw(ic.Err().Error())
+		return "", errno.InternalServerError
+	}
+
+	return value, nil
+}

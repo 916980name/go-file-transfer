@@ -7,6 +7,7 @@ import (
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/common"
 	"file-transfer/pkg/errno"
+	"file-transfer/pkg/model"
 	"file-transfer/pkg/token"
 	"io"
 	"net/http"
@@ -46,18 +47,7 @@ func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *h
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
-	tokenStr, err := token.Sign(user.Id, user.Username)
-	if err != nil {
-		errno.WriteErrorResponse(ctx, w, err)
-		return
-	}
-	tokenStr = "Bearer " + tokenStr
-	w.Header().Set(token.AuthHeader, tokenStr)
-	resp := &v1.UserLoginResponse{
-		Username:   user.Username,
-		Privileges: []string{"P_USER"},
-	}
-	errno.WriteResponse(ctx, w, resp)
+	loginSucResponse(ctx, w, user)
 }
 
 func (uc *UserController) LoginShare(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -83,11 +73,20 @@ func (uc *UserController) LoginByShareLink(ctx context.Context, w http.ResponseW
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
+	loginSucResponse(ctx, w, user)
+}
+
+func loginSucResponse(ctx context.Context, w http.ResponseWriter, user *model.UserInfo) {
 	tokenStr, err := token.Sign(user.Id, user.Username)
 	if err != nil {
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
+	tokenStr = "Bearer " + tokenStr
 	w.Header().Set(token.AuthHeader, tokenStr)
-	errno.WriteResponse(ctx, w, user.Username)
+	resp := &v1.UserLoginResponse{
+		Username:   user.Username,
+		Privileges: []string{"P_USER"},
+	}
+	errno.WriteResponse(ctx, w, resp)
 }

@@ -1,6 +1,9 @@
 package common
 
+import "fmt"
+
 type contextKey int
+type ShareKey int
 
 const (
 	VIPER_RSA_PRI    = "rsa.privateKey"
@@ -12,4 +15,17 @@ const (
 
 	CTX_USER_KEY contextKey = iota
 	// ...
+
+	SHARE_TYPE_LOGIN ShareKey = iota
+	SHARE_TYPE_MESSAGE
+	SHARE_TYPE_FILE
 )
+
+func init() {
+	if FLAG_DEBUG {
+		fmt.Println(CTX_USER_KEY)
+		fmt.Println(SHARE_TYPE_LOGIN)
+		fmt.Println(SHARE_TYPE_MESSAGE)
+		fmt.Println(SHARE_TYPE_FILE)
+	}
+}
