@@ -12,7 +12,7 @@ var (
 )
 
 type IRepo interface {
-	NewTagRepo() MessageRepo
+	NewMessageRepo() MessageRepo
 }
 
 type dataSource struct {
@@ -28,6 +28,6 @@ func NewDataSource(db *mongo.Client) *dataSource {
 	return S
 }
 
-func (s *dataSource) NewTagRepo() MessageRepo {
+func (s *dataSource) NewMessageRepo() MessageRepo {
 	return newMessageRepo(s.db)
 }

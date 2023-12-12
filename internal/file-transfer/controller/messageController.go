@@ -91,3 +91,43 @@ func (mc *MessageController) DeleteMessage(ctx context.Context, w http.ResponseW
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (mc *MessageController) ShareMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mId := vars["mId"]
+	if len(mId) < 1 {
+		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
+		return
+	}
+	shareRequest := &v1.MessageShareParam{
+		ExpireType: common.SHARE_EXPIRE_TYPE_DURATION,
+		Expire:     1}
+	err := util.HttpReadBody(r, shareRequest)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+	userId := ctx.Value(common.CTX_USER_KEY).(string)
+
+	url, err := mc.service.ShareMessage(ctx, mId, userId, shareRequest)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+	errno.WriteResponse(ctx, w, url)
+}
+
+func (mc *MessageController) ReadShareMessage(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	key := mux.Vars(r)["key"]
+	if len(key) < 1 {
+		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
+		return
+	}
+
+	msg, err := mc.service.ReadShareMessage(ctx, key)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+	errno.WriteResponse(ctx, w, msg)
+}

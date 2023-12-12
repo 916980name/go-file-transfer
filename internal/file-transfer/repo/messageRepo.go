@@ -15,6 +15,7 @@ import (
 
 type MessageRepo interface {
 	Query(ctx context.Context, filter *v1.MessageQuery) ([]model.Message, error)
+	QueryById(ctx context.Context, mId string) (*model.Message, error)
 	Insert(ctx context.Context, m *model.Message) (*mongo.InsertOneResult, error)
 	Delete(ctx context.Context, mId string, uId string) (*mongo.DeleteResult, error)
 }
@@ -90,4 +91,19 @@ func (t *messageRepoImpl) Delete(ctx context.Context, mId string, uId string) (*
 
 	filter := bson.M{"_id": bson.M{"$eq": objID}, "userId": bson.M{"$eq": uId}}
 	return c.DeleteOne(ctx, filter)
+}
+
+func (t *messageRepoImpl) QueryById(ctx context.Context, mId string) (*model.Message, error) {
+	c := t.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_MESSAGE)
+	objID, err := primitive.ObjectIDFromHex(mId)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.D{{"_id", objID}}
+	var result model.Message
+	err = c.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

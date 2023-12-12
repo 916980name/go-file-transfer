@@ -21,11 +21,11 @@ var shareTypePrefixMap = make(map[common.ShareKey]string)
 
 func init() {
 	shareTypePathMap[common.SHARE_TYPE_LOGIN] = getSharePathLogin()
-	shareTypePathMap[common.SHARE_TYPE_MESSAGE] = nil
+	shareTypePathMap[common.SHARE_TYPE_MESSAGE] = getSharePathMsg()
 	shareTypePathMap[common.SHARE_TYPE_FILE] = nil
 
 	shareTypePrefixMap[common.SHARE_TYPE_LOGIN] = dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX
-	shareTypePrefixMap[common.SHARE_TYPE_MESSAGE] = ""
+	shareTypePrefixMap[common.SHARE_TYPE_MESSAGE] = dbredis.REDIS_MESSAGE_SHARE_KEY_PREFIX
 	shareTypePrefixMap[common.SHARE_TYPE_FILE] = ""
 }
 
@@ -35,9 +35,17 @@ func getSharePathLogin() func(encodeKStr string) string {
 	}
 }
 
+func getSharePathMsg() func(encodeKStr string) string {
+	return func(encodeKStr string) string {
+		return viper.GetString(common.VIPER_HOST_URL) + "/" + common.MESSAGE_SHARE_PATH + "/" + encodeKStr
+	}
+}
+
 type ShareService interface {
 	CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error)
+	CreateShareUrlWithTimes(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration, times int8) (string, error)
 	CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error)
+	ConsumeShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error)
 }
 
 type shareService struct {
@@ -50,10 +58,7 @@ func NewShareService(rClient *redis.Client) ShareService {
 	return &shareService{redisClient: rClient}
 }
 
-func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error) {
-	if len(value) < 1 {
-		return "", errno.ErrInvalidParameter
-	}
+func genEncodeString(ctx context.Context) (string, error) {
 	nowMilli := fmt.Sprint(time.Now().UnixMilli())
 	log.C(ctx).Debugw("now: " + nowMilli)
 	kStr, err := aesencrypt.GetAESEncrypted(nowMilli)
@@ -65,6 +70,17 @@ func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.Shar
 	log.C(ctx).Debugw("kStr: " + kStr)
 	encodeKStr := util.Base64urlEncode(kStr)
 	log.C(ctx).Debugw("encode kStr: " + encodeKStr)
+	return encodeKStr, nil
+}
+
+func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration) (string, error) {
+	if len(value) < 1 {
+		return "", errno.ErrInvalidParameter
+	}
+	kStr, err := genEncodeString(ctx)
+	if err != nil {
+		return "", err
+	}
 	// TODO: there could create many link for one user
 	// set origin kStr
 	bc := s.redisClient.Set(ctx, shareTypePrefixMap[shareType]+kStr, value, expire)
@@ -73,32 +89,62 @@ func (s *shareService) CreateShareUrl(ctx context.Context, shareType common.Shar
 		return "", errno.InternalServerError
 	}
 	// return encodeKStr
-	return shareTypePathMap[shareType](encodeKStr), nil
+	return shareTypePathMap[shareType](kStr), nil
 }
 
-func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error) {
-	if len(key) < 1 {
+func (s *shareService) CreateShareUrlWithTimes(ctx context.Context, shareType common.ShareKey, value string, expire time.Duration, times int8) (string, error) {
+	if len(value) < 1 {
 		return "", errno.ErrInvalidParameter
+	}
+	kStr, err := genEncodeString(ctx)
+	if err != nil {
+		return "", err
+	}
+	bc := s.redisClient.Set(ctx, shareTypePrefixMap[shareType]+kStr, value, expire)
+	if bc.Err() != nil {
+		log.C(ctx).Warnw(bc.Err().Error())
+		return "", errno.InternalServerError
+	}
+	bc = s.redisClient.Set(ctx, "count-"+kStr, times, expire)
+	if bc.Err() != nil {
+		log.C(ctx).Warnw(bc.Err().Error())
+		return "", errno.InternalServerError
+	}
+	// return encodeKStr
+	return shareTypePathMap[shareType](kStr), nil
+}
+
+func checkKeyExpire(ctx context.Context, key string, expire time.Duration) error {
+	if len(key) < 1 {
+		return errno.ErrInvalidParameter
 	}
 	key = util.Base64urlDecode(key)
 	// check the 'key' valid, time not expired
 	timeStr, err := aesencrypt.GetAESDecrypted(key)
 	if err != nil {
 		log.Warnw("share link decrypt fail", "error", err)
-		return "", errno.ErrInvalidParameter
+		return errno.ErrInvalidParameter
 	}
 	log.C(ctx).Debugw("timeStr: " + timeStr)
 	// Convert timestamp string to int64
 	timestamp, err := strconv.ParseInt(timeStr, 10, 64)
 	if err != nil {
 		log.Warnw("Invalid timestamp format", "error", err)
-		return "", errno.ErrInvalidParameter
+		return errno.ErrInvalidParameter
 	}
 
 	expireTime := time.Unix(0, timestamp*int64(time.Millisecond)).Add(expire)
 	if expireTime.Before(time.Now()) {
 		log.Infow("share link expired at: " + expireTime.Format(time.RFC3339))
-		return "", errno.ErrInvalidParameter
+		return errno.ErrInvalidParameter
+	}
+	return nil
+}
+
+func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error) {
+	err := checkKeyExpire(ctx, key, expire)
+	if err != nil {
+		return "", err
 	}
 
 	// then check redis
@@ -118,5 +164,35 @@ func (s *shareService) CheckShareUrl(ctx context.Context, shareType common.Share
 		return "", errno.InternalServerError
 	}
 
+	return value, nil
+}
+
+func (s *shareService) ConsumeShareUrl(ctx context.Context, shareType common.ShareKey, key string, expire time.Duration) (string, error) {
+	err := checkKeyExpire(ctx, key, expire)
+	if err != nil {
+		return "", err
+	}
+	sc := s.redisClient.Get(ctx, shareTypePrefixMap[shareType]+key)
+	if sc.Err() != nil {
+		log.C(ctx).Warnw(sc.Err().Error())
+		return "", errno.ErrInvalidParameter
+	}
+	value := sc.Val()
+	if value == "" {
+		log.C(ctx).Infow("[" + fmt.Sprint(shareType) + "] share link not match: " + key)
+		return "", errno.ErrInvalidParameter
+	}
+	ic := s.redisClient.Decr(ctx, "count-"+key)
+	if ic.Err() != nil {
+		log.C(ctx).Warnw(ic.Err().Error())
+		return value, nil
+	}
+	log.C(ctx).Debugw("access key: "+key, "count: ", ic.Val())
+	if ic.Val() <= 0 {
+		// do clean
+		log.C(ctx).Debugw("Clean cache key: " + key)
+		s.redisClient.Del(ctx, shareTypePrefixMap[shareType]+key)
+		s.redisClient.Del(ctx, "count-"+key)
+	}
 	return value, nil
 }

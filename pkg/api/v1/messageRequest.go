@@ -1,6 +1,9 @@
 package v1
 
-import "time"
+import (
+	"file-transfer/pkg/common"
+	"time"
+)
 
 type MessageQuery struct {
 	UserId   string `json:"userId,omitempty"`
@@ -16,4 +19,9 @@ type MessageResponse struct {
 	Id        string    `json:"id,omitempty"`
 	Info      string    `json:"info"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+type MessageShareParam struct {
+	ExpireType common.ShareExpireTypeKey `json:"expireType,omitempty"`
+	Expire     int64                     `json:"expire,omitempty"`
 }
