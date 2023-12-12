@@ -182,12 +182,20 @@ func (s *shareService) ConsumeShareUrl(ctx context.Context, shareType common.Sha
 		log.C(ctx).Infow("[" + fmt.Sprint(shareType) + "] share link not match: " + key)
 		return "", errno.ErrInvalidParameter
 	}
+	sc = s.redisClient.Get(ctx, "count-"+key)
+	// if there is no count here, it's only expired by duration
+	if sc.Err() != nil {
+		log.C(ctx).Debugw(sc.Err().Error())
+		return value, nil
+	}
+
 	ic := s.redisClient.Decr(ctx, "count-"+key)
+	// if decr count error, something wrong
 	if ic.Err() != nil {
 		log.C(ctx).Warnw(ic.Err().Error())
 		return value, nil
 	}
-	log.C(ctx).Debugw("access key: "+key, "count: ", ic.Val())
+	log.C(ctx).Debugw("access key: "+key, "count", ic.Val())
 	if ic.Val() <= 0 {
 		// do clean
 		log.C(ctx).Debugw("Clean cache key: " + key)
