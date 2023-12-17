@@ -12,7 +12,7 @@ var (
 
 	InternalServerError = &Errno{HTTP: 500, Code: "InternalError", Message: "Internal server error."}
 
-	ErrAuthFail     = &Errno{HTTP: http.StatusForbidden, Code: "AuthError", Message: "Authentication Failed"}
+	ErrAuthFail     = &Errno{HTTP: http.StatusUnauthorized, Code: "ERR_EXPIRED_TOKEN", Message: "Authentication Failed"}
 	ErrPageNotFound = &Errno{HTTP: 404, Code: "ResourceNotFound.PageNotFound", Message: "Page not found."}
 
 	ErrBind = &Errno{HTTP: 400, Code: "InvalidParameter.BindError", Message: "Error occurred while binding the request body to the struct."}
