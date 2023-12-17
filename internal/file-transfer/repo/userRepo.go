@@ -22,10 +22,6 @@ type userRepoImpl struct {
 
 var _ UserRepo = (*userRepoImpl)(nil)
 
-func newUserRepo(db *mongo.Client) *userRepoImpl {
-	return &userRepoImpl{db}
-}
-
 func NewUserRepo(db *mongo.Client) UserRepo {
 	return &userRepoImpl{db}
 }

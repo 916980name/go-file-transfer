@@ -99,7 +99,7 @@ func (t *messageRepoImpl) QueryById(ctx context.Context, mId string) (*model.Mes
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.D{{"_id", objID}}
+	filter := bson.M{"_id": objID}
 	var result model.Message
 	err = c.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
