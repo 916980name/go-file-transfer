@@ -15,6 +15,8 @@ var (
 	MONGO_DATABASE = "filetransfer"
 	COLL_MESSAGE   = "message"
 	COLL_USER      = "user"
+	COLL_FILE_META = "filemeta"
+	COLL_USER_FILE = "userfile"
 
 	client     *mongo.Client
 	clientOnce sync.Once

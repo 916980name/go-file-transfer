@@ -40,13 +40,16 @@ func initAllRouters(r *mux.Router) error {
 	mongoClient := dbmongo.GetClient(context.Background())
 	messageRepo := repo.NewMessageRepo(mongoClient)
 	userRepo := repo.NewUserRepo(mongoClient)
+	fileRepo := repo.NewFileRepo(mongoClient)
 
 	shareService := service.NewShareService(redisClient)
 	messageService := service.NewMessageService(messageRepo, shareService)
 	userService := service.NewUserService(userRepo, redisClient, shareService)
+	fileService := service.NewFileService(fileRepo)
 
 	messageController := controller.NewMessageController(messageService)
 	userController := controller.NewUserController(userService)
+	fileController := controller.NewFileController(fileService)
 
 	// public
 	r.NewRoute().Methods("GET").Path("/home").HandlerFunc(wrapper(controller.Home))
@@ -61,5 +64,8 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("DELETE").Path("/msg/{mId}").HandlerFunc(authWrapper(messageController.DeleteMessage))
 	r.NewRoute().Methods("POST").Path("/msg/share/{mId}").HandlerFunc(authWrapper(messageController.ShareMessage))
 	r.NewRoute().Methods("GET").Path("/share/login").HandlerFunc(authWrapper(userController.LoginShare))
+	// file
+	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(authWrapper(fileController.UploadFile))
+	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(authWrapper(fileController.QueryUserFile))
 	return nil
 }
