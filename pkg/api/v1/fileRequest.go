@@ -22,3 +22,9 @@ type FileShareParam struct {
 	ExpireType common.ShareExpireTypeKey `json:"expireType,omitempty"`
 	Expire     int64                     `json:"expire,omitempty"`
 }
+
+type FileDownloadData struct {
+	Location string `json:"location"`
+	Name     string `json:"name"`
+	Size     int64  `json:"size"`
+}

@@ -8,6 +8,8 @@ import (
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/util"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type FileController struct {
@@ -54,4 +56,21 @@ func (fc *FileController) QueryUserFile(ctx context.Context, w http.ResponseWrit
 		return
 	}
 	errno.WriteResponse(ctx, w, result)
+}
+
+func (fc *FileController) DownloadFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fId := vars["fId"]
+	if len(fId) < 1 {
+		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
+		return
+	}
+	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	data, err := fc.fileService.DownloadFile(ctx, fId, userId)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+	util.DownloadFileHandler(ctx, w, data)
+
 }

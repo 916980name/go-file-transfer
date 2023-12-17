@@ -47,6 +47,7 @@ func init() {
 type FileService interface {
 	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userId string) error
 	QueryUserFile(ctx context.Context, q *v1.UserFileQuery) ([]v1.FileResponse, error)
+	DownloadFile(ctx context.Context, userFileId string, userId string) (*v1.FileDownloadData, error)
 }
 
 type fileService struct {
@@ -209,4 +210,27 @@ func (f *fileService) QueryUserFile(ctx context.Context, q *v1.UserFileQuery) ([
 		result[i] = r
 	}
 	return result, nil
+}
+
+func (f *fileService) DownloadFile(ctx context.Context, userFileId string, userId string) (*v1.FileDownloadData, error) {
+	if len(userFileId) < 1 {
+		return nil, &errno.Errno{HTTP: http.StatusBadRequest, Message: "request illeagal"}
+	}
+	userFile, err := f.fileRepo.QueryUserFileById(ctx, userFileId)
+	if err != nil {
+		return nil, errno.ErrPageNotFound
+	}
+	if userFile.UserId != userId {
+		return nil, errno.ErrPageNotFound
+	}
+
+	results, err := f.fileRepo.FindByMetaId(ctx, []string{userFile.MetaId})
+	if err != nil || len(results) != 1 {
+		return nil, errno.ErrPageNotFound
+	}
+	return &v1.FileDownloadData{
+		Location: results[0].Location,
+		Size:     results[0].Size,
+		Name:     userFile.Name,
+	}, nil
 }

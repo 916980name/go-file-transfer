@@ -17,9 +17,11 @@ type FileRepo interface {
 	InsertFileMeta(ctx context.Context, m *model.FileMeta) (*mongo.InsertOneResult, error)
 	InsertUserFile(ctx context.Context, m *model.UserFile) (*mongo.InsertOneResult, error)
 	FindOneBySha(ctx context.Context, sha string) (*model.FileMeta, error)
-	FindOneByNameAndUser(ctx context.Context, name string, userId string) (*model.FileMeta, error)
-	QueryUserFile(ctx context.Context, condition *v1.UserFileQuery) ([]model.UserFile, error)
 	FindByMetaId(ctx context.Context, ids []string) ([]model.FileMeta, error)
+
+	FindOneByNameAndUser(ctx context.Context, name string, userId string) (*model.UserFile, error)
+	QueryUserFile(ctx context.Context, condition *v1.UserFileQuery) ([]model.UserFile, error)
+	QueryUserFileById(ctx context.Context, userFileId string) (*model.UserFile, error)
 }
 
 type fileRepoImpl struct {
@@ -53,11 +55,11 @@ func (f *fileRepoImpl) FindOneBySha(ctx context.Context, sha string) (*model.Fil
 	return &result, nil
 }
 
-func (f *fileRepoImpl) FindOneByNameAndUser(ctx context.Context, name string, userId string) (*model.FileMeta, error) {
+func (f *fileRepoImpl) FindOneByNameAndUser(ctx context.Context, name string, userId string) (*model.UserFile, error) {
 	c := f.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_USER_FILE)
 	log.C(ctx).Debugw("FindOneByNameAndUser", "name", name, "userId", userId)
 	filter := bson.M{"name": name, "userId": userId}
-	var result model.FileMeta
+	var result model.UserFile
 	err := c.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
 		return nil, err
@@ -89,6 +91,21 @@ func (f *fileRepoImpl) QueryUserFile(ctx context.Context, condition *v1.UserFile
 	}
 	defer cur.Close(ctx)
 	return iterateUserFileResult(ctx, cur)
+}
+
+func (f *fileRepoImpl) QueryUserFileById(ctx context.Context, userFileId string) (*model.UserFile, error) {
+	c := f.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_USER_FILE)
+	objID, err := primitive.ObjectIDFromHex(userFileId)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{"_id": objID}
+	var result model.UserFile
+	err = c.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func iterateUserFileResult(ctx context.Context, cur *mongo.Cursor) ([]model.UserFile, error) {
