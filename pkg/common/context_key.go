@@ -16,6 +16,7 @@ const (
 	MESSAGE_SHARE_PATH = "ms"
 
 	CTX_USER_KEY contextKey = iota
+	CTX_USER_NAME
 	// ...
 )
 const (

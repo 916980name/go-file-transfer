@@ -173,6 +173,9 @@ func (l *ZapLogger) C(ctx context.Context) *ZapLogger {
 	if user := ctx.Value(common.REQUEST_USER); user != nil {
 		lc.logger = lc.logger.With(zap.Any(common.REQUEST_USER, user))
 	}
+	if uid := ctx.Value(common.REQUEST_UID); uid != nil {
+		lc.logger = lc.logger.With(zap.Any(common.REQUEST_UID, uid))
+	}
 
 	return lc
 }

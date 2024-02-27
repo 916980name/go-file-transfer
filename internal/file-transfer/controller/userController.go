@@ -87,6 +87,7 @@ func loginSucResponse(ctx context.Context, w http.ResponseWriter, user *model.Us
 	resp := &v1.UserLoginResponse{
 		Username:   user.Username,
 		Privileges: "P_USER",
+		IdKey:      user.Id,
 	}
 	errno.WriteResponse(ctx, w, resp)
 }
