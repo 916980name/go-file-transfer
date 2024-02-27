@@ -28,6 +28,7 @@ func RequestFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 
 			ctx = context.WithValue(ctx, common.REQUEST_URI, getRequestUri(r))
 			ctx = context.WithValue(ctx, common.REQUEST_METHOD, getRequestMethod(r))
+			ctx = context.WithValue(ctx, common.REQUEST_USER, getRequestUser(r))
 			log.C(ctx).Debugw("new Request --> ")
 			if pf != nil {
 				next = pf(next)
@@ -43,6 +44,10 @@ func getRequestUri(r *http.Request) string {
 
 func getRequestMethod(r *http.Request) string {
 	return r.Method
+}
+
+func getRequestUser(r *http.Request) string {
+	return r.Header.Get(common.REQUEST_USER)
 }
 
 func getRequestId(r *http.Request) string {

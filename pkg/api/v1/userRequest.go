@@ -10,6 +10,6 @@ type UserLoginRequest struct {
 }
 
 type UserLoginResponse struct {
-	Username   string   `json:"username,omitempty"`
-	Privileges []string `json:"privileges,omitempty"`
+	Username   string `json:"username,omitempty"`
+	Privileges string `json:"privileges,omitempty"`
 }

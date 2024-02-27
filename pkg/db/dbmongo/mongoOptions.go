@@ -30,7 +30,9 @@ func ReadMongoOptions() *MongoOptions {
 	minPoolSize := viper.GetUint64("db.mongo.minPoolSize")
 
 	options := NewMongoOptions()
-	options.ConnectionString = connStr
+	if connStr != "" {
+		options.ConnectionString = connStr
+	}
 	if maxPoolSize != 0 {
 		options.MaxPoolSize = maxPoolSize
 	}

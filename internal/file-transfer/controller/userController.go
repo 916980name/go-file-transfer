@@ -86,7 +86,7 @@ func loginSucResponse(ctx context.Context, w http.ResponseWriter, user *model.Us
 	w.Header().Set(token.AuthHeader, tokenStr)
 	resp := &v1.UserLoginResponse{
 		Username:   user.Username,
-		Privileges: []string{"P_USER"},
+		Privileges: "P_USER",
 	}
 	errno.WriteResponse(ctx, w, resp)
 }

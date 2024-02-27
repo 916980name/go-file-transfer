@@ -1,10 +1,11 @@
 package common
 
 const (
-	REQUEST_ID       = "TX-ID"
-	REQUEST_USER     = "USER"
-	REQUEST_URI      = "URI"
-	REQUEST_METHOD   = "METHOD"
-	REQUEST_TIMEZONE = "TX-TZ"
-	RESOURCE_IP      = "TX-IP"
+	REQUEST_ID       = "R-ID"
+	REQUEST_USER     = "R-USER"
+	REQUEST_URI      = "R-URI"
+	REQUEST_DOMAIN   = "R-DM"
+	REQUEST_METHOD   = "R-METHOD"
+	REQUEST_TIMEZONE = "R-TZ"
+	RESOURCE_IP      = "R-IP"
 )
