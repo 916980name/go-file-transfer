@@ -32,7 +32,8 @@ func wrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
 }
 
 func authWrapper(f middleware.FiletransferContextHandlerFunc) http.HandlerFunc {
-	return handleMuxChainFunc(middleware.RequestFilter(middleware.AuthFilter(handleMuxChain(f))))
+	// return handleMuxChainFunc(middleware.RequestFilter(middleware.AuthFilter(handleMuxChain(f))))
+	return handleMuxChainFunc(middleware.RequestFilter(middleware.CheckAuthFilter(handleMuxChain(f))))
 }
 
 func initAllRouters(r *mux.Router) error {
@@ -58,15 +59,15 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("GET").Path("/ms/{key}").HandlerFunc(wrapper(messageController.ReadShareMessage))
 
 	// need auth
-	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(wrapper(messageController.ReadMessageDefault))
-	r.NewRoute().Methods("POST").Path("/msg").HandlerFunc(wrapper(messageController.ReadMessageByPage))
-	r.NewRoute().Methods("PUT").Path("/msg").HandlerFunc(wrapper(messageController.SendMessage))
-	r.NewRoute().Methods("DELETE").Path("/msg/{mId}").HandlerFunc(wrapper(messageController.DeleteMessage))
-	r.NewRoute().Methods("POST").Path("/msg/share/{mId}").HandlerFunc(wrapper(messageController.ShareMessage))
-	r.NewRoute().Methods("GET").Path("/share/login").HandlerFunc(wrapper(userController.LoginShare))
+	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessageDefault))
+	r.NewRoute().Methods("POST").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessageByPage))
+	r.NewRoute().Methods("PUT").Path("/msg").HandlerFunc(authWrapper(messageController.SendMessage))
+	r.NewRoute().Methods("DELETE").Path("/msg/{mId}").HandlerFunc(authWrapper(messageController.DeleteMessage))
+	r.NewRoute().Methods("POST").Path("/msg/share/{mId}").HandlerFunc(authWrapper(messageController.ShareMessage))
+	r.NewRoute().Methods("GET").Path("/share/login").HandlerFunc(authWrapper(userController.LoginShare))
 	// file
-	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(wrapper(fileController.UploadFile))
-	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(wrapper(fileController.QueryUserFile))
-	r.NewRoute().Methods("GET").Path("/file/{fId}").HandlerFunc(wrapper(fileController.DownloadFile))
+	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(authWrapper(fileController.UploadFile))
+	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(authWrapper(fileController.QueryUserFile))
+	r.NewRoute().Methods("GET").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DownloadFile))
 	return nil
 }

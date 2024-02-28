@@ -170,10 +170,10 @@ func (l *ZapLogger) C(ctx context.Context) *ZapLogger {
 	if method := ctx.Value(common.REQUEST_METHOD); method != nil {
 		lc.logger = lc.logger.With(zap.Any(common.REQUEST_METHOD, method))
 	}
-	if user := ctx.Value(common.REQUEST_USER); user != nil {
+	if user := ctx.Value(common.CTX_USER_NAME); user != nil {
 		lc.logger = lc.logger.With(zap.Any(common.REQUEST_USER, user))
 	}
-	if uid := ctx.Value(common.REQUEST_UID); uid != nil {
+	if uid := ctx.Value(common.CTX_USER_KEY); uid != nil {
 		lc.logger = lc.logger.With(zap.Any(common.REQUEST_UID, uid))
 	}
 

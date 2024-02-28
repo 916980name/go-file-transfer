@@ -24,6 +24,8 @@ func ReadRedisOptions() *RedisOptions {
 	}
 
 	options := NewRedisOptions()
-	options.ConnectionString = connStr
+	if connStr != "" {
+		options.ConnectionString = connStr
+	}
 	return options
 }
