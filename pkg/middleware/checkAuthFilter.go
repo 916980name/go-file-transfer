@@ -12,11 +12,11 @@ func CheckAuthFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 	return func(next FiletransferContextHandlerFunc) FiletransferContextHandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 			log.C(ctx).Debugw("check auth do start")
-			if user := ctx.Value(common.CTX_USER_NAME); user == nil {
+			if user := ctx.Value(common.Trace_request_user{}); user == nil {
 				errno.WriteErrorResponse(ctx, w, errno.ErrAuthFail)
 				return
 			}
-			if uid := ctx.Value(common.CTX_USER_KEY); uid == nil {
+			if uid := ctx.Value(common.Trace_request_uid{}); uid == nil {
 				errno.WriteErrorResponse(ctx, w, errno.ErrAuthFail)
 				return
 			}

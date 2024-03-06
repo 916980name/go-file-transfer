@@ -28,8 +28,8 @@ func RequestFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 
 			ctx = context.WithValue(ctx, common.REQUEST_URI, getRequestUri(r))
 			ctx = context.WithValue(ctx, common.REQUEST_METHOD, getRequestMethod(r))
-			ctx = context.WithValue(ctx, common.CTX_USER_KEY, getRequestUserId(r))
-			ctx = context.WithValue(ctx, common.CTX_USER_NAME, getRequestUser(r))
+			ctx = context.WithValue(ctx, common.Trace_request_uid{}, getRequestUserId(r))
+			ctx = context.WithValue(ctx, common.Trace_request_user{}, getRequestUser(r))
 			log.C(ctx).Debugw("new Request --> ")
 			if pf != nil {
 				next = pf(next)

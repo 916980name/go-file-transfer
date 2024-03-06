@@ -8,7 +8,6 @@ import (
 	"file-transfer/pkg/common"
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/model"
-	"file-transfer/pkg/token"
 	"io"
 	"net/http"
 
@@ -51,7 +50,7 @@ func (uc *UserController) Login(ctx context.Context, w http.ResponseWriter, r *h
 }
 
 func (uc *UserController) LoginShare(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 	url, err := uc.service.CreateLoginUrl(ctx, userId)
 	if err != nil {
 		errno.WriteErrorResponse(ctx, w, err)
@@ -77,13 +76,6 @@ func (uc *UserController) LoginByShareLink(ctx context.Context, w http.ResponseW
 }
 
 func loginSucResponse(ctx context.Context, w http.ResponseWriter, user *model.UserInfo) {
-	tokenStr, err := token.Sign(user.Id, user.Username)
-	if err != nil {
-		errno.WriteErrorResponse(ctx, w, err)
-		return
-	}
-	tokenStr = "Bearer " + tokenStr
-	w.Header().Set(token.AuthHeader, tokenStr)
 	resp := &v1.UserLoginResponse{
 		Username:   user.Username,
 		Privileges: "P_USER",

@@ -2,9 +2,11 @@ package common
 
 import "fmt"
 
-type contextKey int
 type ShareKey int
 type ShareExpireTypeKey int
+
+type Trace_request_user struct{}
+type Trace_request_uid struct{}
 
 const (
 	VIPER_RSA_PRI      = "rsa.privateKey"
@@ -14,10 +16,6 @@ const (
 	VIPER_HOST_URL     = "host-url"
 	LOGIN_SHARE_PATH   = "ls"
 	MESSAGE_SHARE_PATH = "ms"
-
-	CTX_USER_KEY contextKey = iota
-	CTX_USER_NAME
-	// ...
 )
 const (
 	SHARE_TYPE_LOGIN ShareKey = iota
@@ -32,7 +30,6 @@ const (
 
 func init() {
 	if FLAG_DEBUG {
-		fmt.Printf("CTX_USER_KEY %d\n", CTX_USER_KEY)
 		fmt.Printf("SHARE_TYPE_LOGIN %d\n", SHARE_TYPE_LOGIN)
 		fmt.Printf("SHARE_EXPIRE_TYPE_TIMES %d\n", SHARE_EXPIRE_TYPE_TIMES)
 	}

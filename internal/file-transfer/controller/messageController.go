@@ -44,7 +44,7 @@ func (mc *MessageController) ReadMessageByPage(ctx context.Context, w http.Respo
 }
 
 func (mc *MessageController) readMessage(ctx context.Context, w http.ResponseWriter, messageRequest *v1.MessageQuery) {
-	messageRequest.UserId = ctx.Value(common.CTX_USER_KEY).(string)
+	messageRequest.UserId = ctx.Value(common.Trace_request_uid{}).(string)
 
 	result, err := mc.service.QueryMessage(ctx, messageRequest)
 	if err != nil {
@@ -61,7 +61,7 @@ func (mc *MessageController) SendMessage(ctx context.Context, w http.ResponseWri
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 	util.DebugPrintObj(ctx, messageRequest)
 
 	err = mc.service.SendMessage(ctx, messageRequest, userId)
@@ -81,7 +81,7 @@ func (mc *MessageController) DeleteMessage(ctx context.Context, w http.ResponseW
 		return
 	}
 
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 
 	err := mc.service.DeleteMessage(ctx, mId, userId)
 	if err != nil {
@@ -107,7 +107,7 @@ func (mc *MessageController) ShareMessage(ctx context.Context, w http.ResponseWr
 		errno.WriteErrorResponse(ctx, w, err)
 		return
 	}
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 
 	url, err := mc.service.ShareMessage(ctx, mId, userId, shareRequest)
 	if err != nil {

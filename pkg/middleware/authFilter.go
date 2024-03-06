@@ -17,8 +17,8 @@ func AuthFilter(pf FiletransferHandlerFactory) FiletransferHandlerFactory {
 				errno.WriteErrorResponse(ctx, w, errno.ErrAuthFail)
 				return
 			}
-			ctx = context.WithValue(ctx, common.SHARE_TYPE_LOGIN, idkey)
-			ctx = context.WithValue(ctx, common.CTX_USER_KEY, userKey)
+			ctx = context.WithValue(ctx, common.Trace_request_uid{}, idkey)
+			ctx = context.WithValue(ctx, common.Trace_request_user{}, userKey)
 
 			if pf != nil {
 				next = pf(next)

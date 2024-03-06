@@ -28,7 +28,7 @@ func (fc *FileController) UploadFile(ctx context.Context, w http.ResponseWriter,
 	}
 	defer file.Close()
 
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 
 	err = fc.fileService.UploadFile(ctx, file, head, userId)
 	if err != nil {
@@ -48,7 +48,7 @@ func (fc *FileController) QueryUserFile(ctx context.Context, w http.ResponseWrit
 		errno.WriteErrorResponse(ctx, w, errno.ErrInvalidParameter)
 		return
 	}
-	request.UserId = ctx.Value(common.CTX_USER_KEY).(string)
+	request.UserId = ctx.Value(common.Trace_request_uid{}).(string)
 
 	result, err := fc.fileService.QueryUserFile(ctx, request)
 	if err != nil {
@@ -65,7 +65,7 @@ func (fc *FileController) DownloadFile(ctx context.Context, w http.ResponseWrite
 		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
 		return
 	}
-	userId := ctx.Value(common.CTX_USER_KEY).(string)
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
 	data, err := fc.fileService.DownloadFile(ctx, fId, userId)
 	if err != nil {
 		errno.WriteErrorResponse(ctx, w, err)
