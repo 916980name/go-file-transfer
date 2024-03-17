@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -27,22 +28,6 @@ const (
 )
 
 var SAVE_FILE_PATH string
-
-func init() {
-	workingPath, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error:", err)
-		panic(err)
-	}
-	log.Infow("Read Working dir: " + workingPath)
-	SAVE_FILE_PATH = filepath.Join(workingPath, "uploads")
-	err = util.CreateDirectoryIfNotExists(SAVE_FILE_PATH)
-	if err != nil {
-		fmt.Println("Error:", err)
-		panic(err)
-	}
-	log.Infow("Check Save Upload dir: " + SAVE_FILE_PATH)
-}
 
 type FileService interface {
 	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userId string) error
@@ -57,6 +42,20 @@ type fileService struct {
 var _ FileService = (*fileService)(nil)
 
 func NewFileService(fileRepo repo.FileRepo) FileService {
+	workingPath, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error:", err)
+		panic(err)
+	}
+	log.Infow("Read Working dir: " + workingPath)
+	SAVE_FILE_PATH = viper.GetString("upload.path")
+	log.Infow("Read Saving dir: " + workingPath)
+	err = util.CreateDirectoryIfNotExists(SAVE_FILE_PATH)
+	if err != nil {
+		fmt.Println("Error:", err)
+		panic(err)
+	}
+	log.Infow("Check Save Upload dir: " + SAVE_FILE_PATH)
 	return &fileService{fileRepo: fileRepo}
 }
 
@@ -150,7 +149,7 @@ func (f *fileService) UploadFile(ctx context.Context, file multipart.File, heade
 		log.C(ctx).Errorw("upload failed", err)
 		return &errno.Errno{HTTP: http.StatusInternalServerError, Message: "save error"}
 	}
-	fileMeta.Location = finalFilepath
+	fileMeta.Location = finalFilename
 	fileMeta.Sha = sha
 
 	res, err := f.fileRepo.InsertFileMeta(ctx, fileMeta)
@@ -228,8 +227,9 @@ func (f *fileService) DownloadFile(ctx context.Context, userFileId string, userI
 	if err != nil || len(results) != 1 {
 		return nil, errno.ErrPageNotFound
 	}
+	finalFilepath := filepath.Join(SAVE_FILE_PATH, results[0].Location)
 	return &v1.FileDownloadData{
-		Location: results[0].Location,
+		Location: finalFilepath,
 		Size:     results[0].Size,
 		Name:     userFile.Name,
 	}, nil

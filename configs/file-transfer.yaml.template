@@ -7,3 +7,5 @@ log:
   output-paths: 
     - stdout
     - /tmp/file-transfer.log
+upload:
+  path: ~/Document
