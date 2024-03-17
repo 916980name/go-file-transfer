@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/spf13/viper"
 )
 
 var shareTypePathMap = make(map[common.ShareKey]func(encodeKStr string) string)
@@ -31,13 +30,13 @@ func init() {
 
 func getSharePathLogin() func(encodeKStr string) string {
 	return func(encodeKStr string) string {
-		return viper.GetString(common.VIPER_HOST_URL) + "/" + common.LOGIN_SHARE_PATH + "/" + encodeKStr
+		return "/" + common.LOGIN_SHARE_PATH + "/" + encodeKStr
 	}
 }
 
 func getSharePathMsg() func(encodeKStr string) string {
 	return func(encodeKStr string) string {
-		return viper.GetString(common.VIPER_HOST_URL) + "/" + common.MESSAGE_SHARE_PATH + "/" + encodeKStr
+		return "/" + common.MESSAGE_SHARE_PATH + "/" + encodeKStr
 	}
 }
 
