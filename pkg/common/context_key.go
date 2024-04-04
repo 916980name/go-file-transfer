@@ -16,6 +16,7 @@ const (
 	VIPER_HOST_URL     = "host-url"
 	LOGIN_SHARE_PATH   = "ls"
 	MESSAGE_SHARE_PATH = "ms"
+	FILE_SHARE_PATH    = "fs"
 )
 const (
 	SHARE_TYPE_LOGIN ShareKey = iota

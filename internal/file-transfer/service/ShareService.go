@@ -21,11 +21,11 @@ var shareTypePrefixMap = make(map[common.ShareKey]string)
 func init() {
 	shareTypePathMap[common.SHARE_TYPE_LOGIN] = getSharePathLogin()
 	shareTypePathMap[common.SHARE_TYPE_MESSAGE] = getSharePathMsg()
-	shareTypePathMap[common.SHARE_TYPE_FILE] = nil
+	shareTypePathMap[common.SHARE_TYPE_FILE] = getSharePathFile()
 
 	shareTypePrefixMap[common.SHARE_TYPE_LOGIN] = dbredis.REDIS_LOGIN_SHARE_KEY_PREFIX
 	shareTypePrefixMap[common.SHARE_TYPE_MESSAGE] = dbredis.REDIS_MESSAGE_SHARE_KEY_PREFIX
-	shareTypePrefixMap[common.SHARE_TYPE_FILE] = ""
+	shareTypePrefixMap[common.SHARE_TYPE_FILE] = dbredis.REDIS_FILE_SHARE_KEY_PREFIX
 }
 
 func getSharePathLogin() func(encodeKStr string) string {
@@ -37,6 +37,12 @@ func getSharePathLogin() func(encodeKStr string) string {
 func getSharePathMsg() func(encodeKStr string) string {
 	return func(encodeKStr string) string {
 		return "/" + common.MESSAGE_SHARE_PATH + "/" + encodeKStr
+	}
+}
+
+func getSharePathFile() func(encodeKStr string) string {
+	return func(encodeKStr string) string {
+		return "/" + common.FILE_SHARE_PATH + "/" + encodeKStr
 	}
 }
 

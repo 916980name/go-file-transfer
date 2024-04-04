@@ -27,7 +27,8 @@ type messageService struct {
 }
 
 var (
-	MESSAGE_SHARE_LINK_EXPIRE time.Duration = 24 * time.Hour
+	MESSAGE_SHARE_LINK_EXPIRE time.Duration = 24 * 7 * time.Hour
+	FILE_SHARE_LINK_EXPIRE    time.Duration = 24 * 7 * time.Hour
 )
 
 var _ MessageService = (*messageService)(nil)

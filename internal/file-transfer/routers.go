@@ -46,7 +46,7 @@ func initAllRouters(r *mux.Router) error {
 	shareService := service.NewShareService(redisClient)
 	messageService := service.NewMessageService(messageRepo, shareService)
 	userService := service.NewUserService(userRepo, redisClient, shareService)
-	fileService := service.NewFileService(fileRepo)
+	fileService := service.NewFileService(fileRepo, shareService)
 
 	messageController := controller.NewMessageController(messageService)
 	userController := controller.NewUserController(userService)
@@ -57,6 +57,7 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("POST").Path("/trysignin").HandlerFunc(wrapper(userController.Login))
 	r.NewRoute().Methods("GET").Path("/ls/{loginKey}").HandlerFunc(wrapper(userController.LoginByShareLink))
 	r.NewRoute().Methods("GET").Path("/ms/{key}").HandlerFunc(wrapper(messageController.ReadShareMessage))
+	r.NewRoute().Methods("GET").Path("/fs/{key}").HandlerFunc(wrapper(fileController.ReadShare))
 
 	// need auth
 	r.NewRoute().Methods("GET").Path("/msg").HandlerFunc(authWrapper(messageController.ReadMessageDefault))
@@ -69,5 +70,6 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(authWrapper(fileController.UploadFile))
 	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(authWrapper(fileController.QueryUserFile))
 	r.NewRoute().Methods("GET").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DownloadFile))
+	r.NewRoute().Methods("POST").Path("/file/share/{mId}").HandlerFunc(authWrapper(fileController.Share))
 	return nil
 }

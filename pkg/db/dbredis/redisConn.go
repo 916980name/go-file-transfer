@@ -12,6 +12,7 @@ import (
 var (
 	REDIS_LOGIN_SHARE_KEY_PREFIX   = "ls-"
 	REDIS_MESSAGE_SHARE_KEY_PREFIX = "ms-"
+	REDIS_FILE_SHARE_KEY_PREFIX    = "fs-"
 
 	client     *redis.Client
 	clientOnce sync.Once

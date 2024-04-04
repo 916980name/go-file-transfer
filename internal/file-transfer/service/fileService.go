@@ -4,6 +4,7 @@ import (
 	"context"
 	"file-transfer/internal/file-transfer/repo"
 	v1 "file-transfer/pkg/api/v1"
+	"file-transfer/pkg/common"
 	"file-transfer/pkg/errno"
 	"file-transfer/pkg/log"
 	"file-transfer/pkg/model"
@@ -33,15 +34,18 @@ type FileService interface {
 	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userId string) error
 	QueryUserFile(ctx context.Context, q *v1.UserFileQuery) ([]v1.FileResponse, error)
 	DownloadFile(ctx context.Context, userFileId string, userId string) (*v1.FileDownloadData, error)
+	Share(ctx context.Context, mId string, userId string, expireParam *v1.MessageShareParam) (string, error)
+	ReadShare(ctx context.Context, key string) (*v1.FileDownloadData, error)
 }
 
 type fileService struct {
-	fileRepo repo.FileRepo
+	fileRepo  repo.FileRepo
+	shareServ ShareService
 }
 
 var _ FileService = (*fileService)(nil)
 
-func NewFileService(fileRepo repo.FileRepo) FileService {
+func NewFileService(fileRepo repo.FileRepo, shareServ ShareService) FileService {
 	workingPath, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -56,7 +60,7 @@ func NewFileService(fileRepo repo.FileRepo) FileService {
 		panic(err)
 	}
 	log.Infow("Check Save Upload dir: " + SAVE_FILE_PATH)
-	return &fileService{fileRepo: fileRepo}
+	return &fileService{fileRepo: fileRepo, shareServ: shareServ}
 }
 
 func (f *fileService) UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userId string) error {
@@ -220,6 +224,46 @@ func (f *fileService) DownloadFile(ctx context.Context, userFileId string, userI
 		return nil, errno.ErrPageNotFound
 	}
 	if userFile.UserId != userId {
+		return nil, errno.ErrPageNotFound
+	}
+
+	results, err := f.fileRepo.FindByMetaId(ctx, []string{userFile.MetaId})
+	if err != nil || len(results) != 1 {
+		return nil, errno.ErrPageNotFound
+	}
+	finalFilepath := filepath.Join(SAVE_FILE_PATH, results[0].Location)
+	return &v1.FileDownloadData{
+		Location: finalFilepath,
+		Size:     results[0].Size,
+		Name:     userFile.Name,
+	}, nil
+}
+
+func (f *fileService) Share(ctx context.Context, mId string, userId string, expireParam *v1.MessageShareParam) (string, error) {
+	file, err := f.fileRepo.QueryUserFileById(ctx, mId)
+	if err != nil {
+		return "", &errno.Errno{HTTP: http.StatusBadRequest, Message: "invalid"}
+	}
+	if file.UserId != userId {
+		return "", &errno.Errno{HTTP: http.StatusNotAcceptable, Message: "invalid File"}
+	}
+	switch expireParam.ExpireType {
+	case common.SHARE_EXPIRE_TYPE_DURATION:
+		return f.shareServ.CreateShareUrl(ctx, common.SHARE_TYPE_FILE, mId, time.Duration(expireParam.Expire*int64(time.Minute)))
+	case common.SHARE_EXPIRE_TYPE_TIMES:
+		return f.shareServ.CreateShareUrlWithTimes(ctx, common.SHARE_TYPE_FILE, mId, FILE_SHARE_LINK_EXPIRE, int8(expireParam.Expire))
+	default:
+		return "", &errno.Errno{HTTP: http.StatusMethodNotAllowed, Message: "invalid type"}
+	}
+}
+
+func (f *fileService) ReadShare(ctx context.Context, key string) (*v1.FileDownloadData, error) {
+	userFileId, err := f.shareServ.ConsumeShareUrl(ctx, common.SHARE_TYPE_FILE, key, FILE_SHARE_LINK_EXPIRE)
+	if err != nil {
+		return nil, &errno.Errno{HTTP: http.StatusBadRequest, Message: "invalid"}
+	}
+	userFile, err := f.fileRepo.QueryUserFileById(ctx, userFileId)
+	if err != nil {
 		return nil, errno.ErrPageNotFound
 	}
 
