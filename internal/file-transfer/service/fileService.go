@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"file-transfer/internal/file-transfer/repo"
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/common"
@@ -36,6 +37,7 @@ type FileService interface {
 	DownloadFile(ctx context.Context, userFileId string, userId string) (*v1.FileDownloadData, error)
 	Share(ctx context.Context, mId string, userId string, expireParam *v1.MessageShareParam) (string, error)
 	ReadShare(ctx context.Context, key string) (*v1.FileDownloadData, error)
+	DeleteFile(ctx context.Context, userFileId string, userId string) error
 }
 
 type fileService struct {
@@ -237,6 +239,41 @@ func (f *fileService) DownloadFile(ctx context.Context, userFileId string, userI
 		Size:     results[0].Size,
 		Name:     userFile.Name,
 	}, nil
+}
+
+func (f *fileService) DeleteFile(ctx context.Context, userFileId string, userId string) error {
+	userFile, err := f.fileRepo.QueryUserFileById(ctx, userFileId)
+	if err != nil {
+		return errno.ErrPageNotFound
+	}
+	if userFile.UserId != userId {
+		return errno.ErrPageNotFound
+	}
+	userFile, err = f.fileRepo.DeleteUserFile(ctx, userFileId)
+	if err != nil {
+		return err
+	}
+	userFileData, _ := json.Marshal(userFile)
+	log.C(ctx).Infow(fmt.Sprintf("Remove User File: %s", string(userFileData)))
+
+	meta, err := f.fileRepo.DeleteMetaFile(ctx, userFile.MetaId)
+	if err != nil {
+		return err
+	}
+	if meta != nil {
+		// need clean the file
+		metaData, _ := json.Marshal(meta)
+		log.C(ctx).Infow(fmt.Sprintf("Delete file: %s", string(metaData)))
+		// Delete the file
+		finalFilepath := filepath.Join(SAVE_FILE_PATH, meta.Location)
+		log.C(ctx).Infow(fmt.Sprintf("Delete file path: %s", finalFilepath))
+		err := os.Remove(finalFilepath)
+		if err != nil {
+			log.C(ctx).Warnw(fmt.Sprintf("Delete file Fail: %s", finalFilepath))
+			return err
+		}
+	}
+	return nil
 }
 
 func (f *fileService) Share(ctx context.Context, mId string, userId string, expireParam *v1.MessageShareParam) (string, error) {

@@ -114,3 +114,19 @@ func (fc *FileController) ReadShare(ctx context.Context, w http.ResponseWriter, 
 	}
 	util.DownloadFileHandler(ctx, w, data)
 }
+
+func (fc *FileController) DeleteFile(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fId := vars["fId"]
+	if len(fId) < 1 {
+		errno.WriteErrorResponse(ctx, w, &errno.Errno{Message: "invalid"})
+		return
+	}
+	userId := ctx.Value(common.Trace_request_uid{}).(string)
+	err := fc.fileService.DeleteFile(ctx, fId, userId)
+	if err != nil {
+		errno.WriteErrorResponse(ctx, w, err)
+		return
+	}
+	errno.WriteResponse(ctx, w, nil)
+}

@@ -22,6 +22,8 @@ type FileRepo interface {
 	FindOneByNameAndUser(ctx context.Context, name string, userId string) (*model.UserFile, error)
 	QueryUserFile(ctx context.Context, condition *v1.UserFileQuery) ([]model.UserFile, error)
 	QueryUserFileById(ctx context.Context, userFileId string) (*model.UserFile, error)
+	DeleteUserFile(ctx context.Context, userFileId string) (*model.UserFile, error)
+	DeleteMetaFile(ctx context.Context, metaFileId string) (*model.FileMeta, error)
 }
 
 type fileRepoImpl struct {
@@ -163,4 +165,53 @@ func iterateFileMetaResult(ctx context.Context, cur *mongo.Cursor) ([]model.File
 		return nil, err
 	}
 	return arr, nil
+}
+
+func (f *fileRepoImpl) DeleteUserFile(ctx context.Context, userFileId string) (*model.UserFile, error) {
+	userC := f.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_USER_FILE)
+	data, err := f.QueryUserFileById(ctx, userFileId)
+	if err != nil {
+		return nil, err
+	}
+	objID, err := primitive.ObjectIDFromHex(userFileId)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{"_id": bson.M{"$eq": objID}}
+	_, err = userC.DeleteOne(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (f *fileRepoImpl) DeleteMetaFile(ctx context.Context, metaId string) (*model.FileMeta, error) {
+	filter := bson.M{"metaId": metaId}
+	// check if user hold the file
+	userC := f.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_USER_FILE)
+	cursor, err := userC.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+	var metaData *model.FileMeta
+	// Check if any records exist
+	if !cursor.Next(ctx) {
+		// No records matching the criteria
+		metaC := f.db.Database(dbmongo.MONGO_DATABASE).Collection(dbmongo.COLL_FILE_META)
+		objID, err := primitive.ObjectIDFromHex(metaId)
+		if err != nil {
+			return nil, err
+		}
+		filter = bson.M{"_id": bson.M{"$eq": objID}}
+		err = metaC.FindOne(ctx, filter).Decode(&metaData)
+		if err != nil {
+			return nil, err
+		}
+		_, err = metaC.DeleteOne(ctx, filter)
+		if err != nil {
+			return nil, err
+		}
+	} // Close the cursor
+	return metaData, nil
 }

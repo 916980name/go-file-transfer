@@ -69,6 +69,7 @@ func initAllRouters(r *mux.Router) error {
 	// file
 	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(authWrapper(fileController.UploadFile))
 	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(authWrapper(fileController.QueryUserFile))
+	r.NewRoute().Methods("DELETE").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DeleteFile))
 	r.NewRoute().Methods("GET").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DownloadFile))
 	r.NewRoute().Methods("POST").Path("/file/share/{mId}").HandlerFunc(authWrapper(fileController.Share))
 	return nil
