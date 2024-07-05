@@ -43,8 +43,8 @@ func DownloadFileHandler(ctx context.Context, w http.ResponseWriter, data *v1.Fi
 	defer file.Close()
 
 	// Set the headers
-	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", url.PathEscape(data.Name))) // Replace with the desired filename
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", data.Size))
 
 	// Stream the file to the response
 	_, err = io.Copy(w, file)
