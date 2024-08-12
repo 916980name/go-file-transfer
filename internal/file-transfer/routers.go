@@ -66,6 +66,7 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("DELETE").Path("/msg/{mId}").HandlerFunc(authWrapper(messageController.DeleteMessage))
 	r.NewRoute().Methods("POST").Path("/msg/share/{mId}").HandlerFunc(authWrapper(messageController.ShareMessage))
 	r.NewRoute().Methods("GET").Path("/share/login").HandlerFunc(authWrapper(userController.LoginShare))
+	r.NewRoute().Methods("GET").Path("/user/me").HandlerFunc(authWrapper(userController.UserMe))
 	// file
 	r.NewRoute().Methods("POST").Path("/file").HandlerFunc(authWrapper(fileController.UploadFile))
 	r.NewRoute().Methods("POST").Path("/file/query").HandlerFunc(authWrapper(fileController.QueryUserFile))

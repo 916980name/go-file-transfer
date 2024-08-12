@@ -75,6 +75,10 @@ func (uc *UserController) LoginByShareLink(ctx context.Context, w http.ResponseW
 	loginSucResponse(ctx, w, user)
 }
 
+func (uc *UserController) UserMe(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	errno.WriteResponse(ctx, w, nil)
+}
+
 func loginSucResponse(ctx context.Context, w http.ResponseWriter, user *model.UserInfo) {
 	resp := &v1.UserLoginResponse{
 		Username:   user.Username,

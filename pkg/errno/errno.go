@@ -41,19 +41,19 @@ func WriteResponse(c context.Context, w http.ResponseWriter, data interface{}) {
 }
 
 func marshalResponse(w http.ResponseWriter, hcode int, data interface{}) {
+	w.WriteHeader(hcode)
 	if str, ok := data.(string); ok {
-		w.WriteHeader(hcode)
 		w.Write([]byte(str))
 		return
 	}
-	result, eR := json.Marshal(data)
-	if eR != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	if data != nil {
+		result, eR := json.Marshal(data)
+		if eR != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(result)
 	}
-
-	w.WriteHeader(hcode)
-	w.Write(result)
 }
 
 type Errno struct {
