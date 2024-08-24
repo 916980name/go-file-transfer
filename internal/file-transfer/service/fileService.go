@@ -25,11 +25,12 @@ import (
 const (
 	TEMP_FILE_DIR     string = "/tmp"
 	TEMP_FILE_PATTERN string = "file-transfer-upload-*.tmp"
-	// limit reader end with EOF, but don't know is it real end or reach the limit
-	MAX_SINGLE_FILE_SIZE int64 = 50*1024*1024 + 1
 )
 
 var SAVE_FILE_PATH string
+
+// limit reader end with EOF, but don't know is it real end or reach the limit
+var MAX_SINGLE_FILE_SIZE int64 = 50*1024*1024 + 1
 
 type FileService interface {
 	UploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, userId string) error
@@ -62,6 +63,13 @@ func NewFileService(fileRepo repo.FileRepo, shareServ ShareService) FileService 
 		panic(err)
 	}
 	log.Infow("Check Save Upload dir: " + SAVE_FILE_PATH)
+
+	log.Infow(fmt.Sprintf("Read Max file size: (default) %d", MAX_SINGLE_FILE_SIZE))
+	maxSize := viper.GetInt64("upload.max-file-size")
+	if maxSize > 0 {
+		MAX_SINGLE_FILE_SIZE = maxSize
+		log.Infow(fmt.Sprintf("Read Max file size: (use) %d", MAX_SINGLE_FILE_SIZE))
+	}
 	return &fileService{fileRepo: fileRepo, shareServ: shareServ}
 }
 

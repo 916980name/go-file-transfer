@@ -9,3 +9,18 @@ log:
     - /tmp/file-transfer.log
 upload:
   path: ~/Document
+  max-file-size: 209715200
+
+db:
+  mongo:
+    connectionString: mongodb://localhost:27017
+  redis:
+    connectionString: redis://localhost:6379
+
+jwt-secret: 0*******0
+rsa:
+  privateKey: rsa.pem
+  publicKey: rsa.pem.pub
+aes:
+  key: 0******************************0
+  iv: 0**************0
