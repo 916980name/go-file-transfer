@@ -2,6 +2,7 @@ package config
 
 import (
 	"file-transfer/pkg/log"
+	"file-transfer/pkg/third"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,4 +43,8 @@ func ReadConfig(cfgFile string) {
 	if err := viper.ReadInConfig(); err == nil {
 		log.Infow("Using config file:", "file", viper.ConfigFileUsed())
 	}
+
+	third.CLOUDINARY_FOLDER = viper.GetString("cloudinary.folder")
+	third.CLOUDINARY_MONGODB = viper.GetString("cloudinary.mongo.dbname")
+	third.CLOUDINARY_MONGOCOLLECTION = viper.GetString("cloudinary.mongo.collection")
 }

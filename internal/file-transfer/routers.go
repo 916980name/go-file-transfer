@@ -73,5 +73,7 @@ func initAllRouters(r *mux.Router) error {
 	r.NewRoute().Methods("DELETE").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DeleteFile))
 	r.NewRoute().Methods("GET").Path("/file/{fId}").HandlerFunc(authWrapper(fileController.DownloadFile))
 	r.NewRoute().Methods("POST").Path("/file/share/{mId}").HandlerFunc(authWrapper(fileController.Share))
+	// cloudinary
+	r.NewRoute().Methods("POST").Path("/cloudinary").HandlerFunc(authWrapper(fileController.CloudinaryUploadFile))
 	return nil
 }

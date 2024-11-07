@@ -28,3 +28,9 @@ type FileDownloadData struct {
 	Name     string `json:"name"`
 	Size     int64  `json:"size"`
 }
+
+type CloudinaryFileUpReq struct {
+	UserId string
+	Title  string
+	Desc   string
+}

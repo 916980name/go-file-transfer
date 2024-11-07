@@ -17,6 +17,11 @@ db:
   redis:
     connectionString: redis://localhost:6379
 
+cloudinary:
+  folder: test
+  mongo.dbname: testdb
+  mongo.collection: images
+
 jwt-secret: 0*******0
 rsa:
   privateKey: rsa.pem

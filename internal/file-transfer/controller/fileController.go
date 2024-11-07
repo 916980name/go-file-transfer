@@ -6,8 +6,11 @@ import (
 	v1 "file-transfer/pkg/api/v1"
 	"file-transfer/pkg/common"
 	"file-transfer/pkg/errno"
+	"file-transfer/pkg/log"
 	"file-transfer/pkg/util"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -27,6 +30,14 @@ func (fc *FileController) UploadFile(ctx context.Context, w http.ResponseWriter,
 		return
 	}
 	defer file.Close()
+	if cl, err := strconv.Atoi(r.Header.Get("Content-Length")); err == nil {
+		if cl > int(service.MAX_SINGLE_FILE_SIZE) {
+			msg := fmt.Sprintf("file size exceed %d", service.MAX_SINGLE_FILE_SIZE)
+			log.C(ctx).Warnw("upload failed, " + msg)
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
+	}
 
 	userId := ctx.Value(common.Trace_request_uid{}).(string)
 

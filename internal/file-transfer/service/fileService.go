@@ -39,6 +39,8 @@ type FileService interface {
 	Share(ctx context.Context, mId string, userId string, expireParam *v1.MessageShareParam) (string, error)
 	ReadShare(ctx context.Context, key string) (*v1.FileDownloadData, error)
 	DeleteFile(ctx context.Context, userFileId string, userId string) error
+
+	CloudinaryUploadFile(ctx context.Context, file multipart.File, header *multipart.FileHeader, req *v1.CloudinaryFileUpReq) (*model.CloudinaryFile, error)
 }
 
 type fileService struct {
