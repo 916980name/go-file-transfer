@@ -7,22 +7,23 @@ import (
 )
 
 type CloudinaryFile struct {
-	AssetID      string    `json:"asset_id"`
-	PublicID     string    `json:"public_id"`
-	AssetFolder  string    `json:"asset_folder"`
-	DisplayName  string    `json:"display_name"`
+	AssetID      string    `bson:"asset_id" json:"asset_id"`
+	PublicID     string    `bson:"public_id" json:"public_id"`
+	AssetFolder  string    `bson:"asset_folder" json:"asset_folder"`
+	DisplayName  string    `bson:"display_name" json:"display_name"`
 	Format       string    `json:"format"`
 	Width        int       `json:"width,omitempty"`
 	Height       int       `json:"height,omitempty"`
-	ResourceType string    `json:"resource_type"`
-	CreatedAt    time.Time `json:"created_at"`
+	ResourceType string    `bson:"resource_type" json:"resource_type"`
+	CreatedAt    time.Time `bson:"created_at" json:"created_at"`
 	Bytes        int       `json:"bytes"`
 	Type         string    `json:"type"`
 	URL          string    `json:"url"`
-	SecureURL    string    `json:"secure_url"`
-	AccessMode   string    `json:"access_mode"`
+	SecureURL    string    `bson:"secure_url" json:"secure_url"`
+	AccessMode   string    `bson:"access_mode" json:"access_mode"`
 	Title        string    `json:"title"`
 	Desc         string    `json:"desc"`
+	OriginUrl    string    `bson:"origin_url" json:"origin_url"`
 }
 
 func ClCopy(result *cl.UploadResult) *CloudinaryFile {

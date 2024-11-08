@@ -12,6 +12,7 @@ func (fc *FileController) CloudinaryUploadFile(ctx context.Context, w http.Respo
 	file, head, err := r.FormFile("file")
 	title := r.FormValue("title")
 	desc := r.FormValue("desc")
+	source := r.FormValue("source")
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
@@ -20,9 +21,10 @@ func (fc *FileController) CloudinaryUploadFile(ctx context.Context, w http.Respo
 
 	userId := ctx.Value(common.Trace_request_uid{}).(string)
 	req := &v1.CloudinaryFileUpReq{
-		UserId: userId,
-		Title:  title,
-		Desc:   desc,
+		UserId:    userId,
+		Title:     title,
+		Desc:      desc,
+		OriginUrl: source,
 	}
 
 	m, err := fc.fileService.CloudinaryUploadFile(ctx, file, head, req)

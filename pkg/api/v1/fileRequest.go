@@ -30,7 +30,8 @@ type FileDownloadData struct {
 }
 
 type CloudinaryFileUpReq struct {
-	UserId string
-	Title  string
-	Desc   string
+	UserId    string
+	Title     string
+	Desc      string
+	OriginUrl string
 }

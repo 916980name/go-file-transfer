@@ -53,6 +53,7 @@ func (f *fileService) CloudinaryUploadFile(ctx context.Context, file multipart.F
 	m := model.ClCopy(result)
 	m.Title = req.Title
 	m.Desc = req.Desc
+	m.OriginUrl = req.OriginUrl
 	_, err = f.fileRepo.CloudinaryNewFile(ctx, m)
 	if err != nil {
 		log.C(ctx).Errorw("InsertFile Record failed", "err", err, "clResult", result)
