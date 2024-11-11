@@ -26,6 +26,8 @@ type FileRepo interface {
 	DeleteMetaFile(ctx context.Context, metaFileId string) (*model.FileMeta, error)
 
 	CloudinaryNewFile(ctx context.Context, m *model.CloudinaryFile) (*mongo.InsertOneResult, error)
+	CloudinaryQueryAllFile(ctx context.Context, condition *v1.CloudinaryFileReq) ([]model.CloudinaryFile, error)
+	CloudinaryQueryFileById(ctx context.Context, assetId string) (*model.CloudinaryFile, error)
 }
 
 type fileRepoImpl struct {

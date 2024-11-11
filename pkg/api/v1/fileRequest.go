@@ -35,3 +35,8 @@ type CloudinaryFileUpReq struct {
 	Desc      string
 	OriginUrl string
 }
+
+type CloudinaryFileReq struct {
+	Page     int
+	PageSize int
+}
